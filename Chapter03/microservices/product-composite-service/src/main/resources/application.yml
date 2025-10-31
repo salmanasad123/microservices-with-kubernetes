@@ -1,0 +1,20 @@
+server.port: 7000
+server.error.include-message: always
+
+# To avoid hardcoding the address information for the core services into the source code of the composite
+# microservice, the composite service uses a property file where information on how to find the core services is stored
+app:
+  product-service:
+    host: localhost
+    port: 7001
+  recommendation-service:
+    host: localhost
+    port: 7002
+  review-service:
+    host: localhost
+    port: 7003
+
+logging:
+  level:
+    root: INFO
+    se.magnus: DEBUG

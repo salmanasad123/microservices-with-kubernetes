@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="product-service" />
+        <module name="api" />
+        <module name="util" />
+        <module name="review-service" />
+        <module name="product-composite-service" />
+        <module name="recommendation-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="api" target="17" />
+      <module name="Chapter03" target="17" />
+      <module name="product-composite-service" target="17" />
+      <module name="product-service" target="17" />
+      <module name="recommendation-service" target="17" />
+      <module name="review-service" target="17" />
+      <module name="util" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api" options="" />
+      <module name="product-composite-service" options="" />
+      <module name="product-service" options="" />
+      <module name="recommendation-service" options="" />
+      <module name="util" options="" />
+    </option>
+  </component>
+</project>

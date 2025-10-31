@@ -1,0 +1,16 @@
+server.port: 7001
+server.error.include-message: always
+
+logging:
+  level:
+    root: INFO
+    com.microservices: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

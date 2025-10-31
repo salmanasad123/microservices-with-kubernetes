@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/Chapter03.iml" filepath="$PROJECT_DIR$/.idea/Chapter03.iml" />
+      <module fileurl="file://$PROJECT_DIR$/api/api.iml" filepath="$PROJECT_DIR$/api/api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/microservices/product-composite-service/product-composite-service.iml" filepath="$PROJECT_DIR$/microservices/product-composite-service/product-composite-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/microservices/product-service/product-service.iml" filepath="$PROJECT_DIR$/microservices/product-service/product-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/microservices/recommendation-service/recommendation-service.iml" filepath="$PROJECT_DIR$/microservices/recommendation-service/recommendation-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/microservices/review-service/review-service.iml" filepath="$PROJECT_DIR$/microservices/review-service/review-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/util/util.iml" filepath="$PROJECT_DIR$/util/util.iml" />
+    </modules>
+  </component>
+</project>
