@@ -1,0 +1,38 @@
+# For each microservice, we specify the following:
+# • The name of the microservice. This will also be the hostname of the container in the internal Docker network.
+# • A build directive that specifies where to find the Dockerfile that was used to build the Docker image.
+# A memory limit of 512 MB. 512 MB should be sufficient for all our microservices
+# The environment variables that will be set up for the container. In our case, we used these to
+# specify which Spring profile to use.
+
+# For the product-composite service, we will also specify port mappings – we will expose its port so it
+# can be reached from outside Docker. The other microservices will not be accessible from the outside.
+
+version: '2.1'
+
+services:
+  product:
+    build: microservices/product-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  recommendation:
+    build: microservices/recommendation-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  review:
+    build: microservices/review-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  product-composite:
+    build: microservices/product-composite-service
+    mem_limit: 512m
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker

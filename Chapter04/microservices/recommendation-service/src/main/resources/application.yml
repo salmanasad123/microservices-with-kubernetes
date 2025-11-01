@@ -5,3 +5,16 @@ logging:
   level:
     root: INFO
     com.microservices: DEBUG
+
+
+# Values in a profile override values from the default profile. By using YAML files, multiple Spring profiles
+#  can be placed in the same file, separated by ---
+---
+
+# To handle the different configurations that are required when running locally without Docker and
+# when running the microservices as Docker containers, we will use Spring profiles. Now, we will create a new
+# Spring profile named docker to be used when we run our microservices as containers in Docker.
+
+spring.config.activate.on-profile: docker
+
+server.port: 8080
