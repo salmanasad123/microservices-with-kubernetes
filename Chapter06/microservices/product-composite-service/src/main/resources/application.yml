@@ -1,0 +1,46 @@
+server.port: 7000
+server.error.include-message: always
+
+# To avoid hardcoding the address information for the core services into the source code of the composite
+# microservice, the composite service uses a property file where information on how to find the core services is stored
+app:
+  product-service:
+    host: localhost
+    port: 7001
+  recommendation-service:
+    host: localhost
+    port: 7002
+  review-service:
+    host: localhost
+    port: 7003
+
+logging:
+  level:
+    root: INFO
+    se.magnus: DEBUG
+
+
+#  For the product-composite-service, things are a bit more complicated since it needs to know where
+# to find the core services. When we ran all the services on localhost, it was configured to use localhost
+# and individual port numbers, 7001-7003, for each core service. When running in Docker, each service
+# will have its own hostname but will be accessible on the same port number, 8080. Here, the docker
+# profile for product-composite-service looks as follows
+
+# Where did the hostnames product, recommendation, and review come from?
+# These are specified in the docker-compose.yml file
+
+---
+spring.config.activate.on-profile: docker
+
+server.port: 8080
+
+app:
+  product-service:
+    host: product
+    port: 8080
+  recommendation-service:
+    host: recommendation
+    port: 8080
+  review-service:
+    host: review
+    port: 8080
