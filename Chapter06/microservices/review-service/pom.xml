@@ -30,6 +30,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -66,6 +67,63 @@
 			<artifactId>util</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+		<!--  Java mein kuch libraries (jaise MapStruct, Lombok, Dagger, AutoValue, etc.) aise kaam karti hain
+		jahan wo compile time pe code generate karti hain — jaise getter/setter, mapper classes, builder patterns, etc.
+		Is code generation process ko annotation processing kehte hain. Jab compiler (javac) code compile karta hai, to wo dekhta hai:
+		“Kya is code mein koi annotation (@Mapper, @Getter, etc.) aisi hai jiska processor registered hai?”
+        Agar haan — to wo annotation processor run karta hai, jo new .java files generate kar deta hai before final compilation.
+
+		Lombok example:
+		Compiler (javac) jab ye class compile karta hai, wo dekhta hai:
+        “Yahan @Getter aur @Setter annotations lage hue hain — kya koi processor in annotations ko handle karta hai?”
+        Lombok ka annotation processor trigger hota hai.
+        Ye compile time pe temporary hidden code inject kar deta hai (getters, setters, etc.) in the compiled .class file.
+
+		Scope provided ka matlab:
+        “Ye dependency compile ke waqt chahiye (for code generation),
+        par runtime pe classpath mein nahi chahiye.”
+        !-->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct-processor</artifactId>
+			<version>${mapstruct.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct-processor</artifactId>
+			<version>${mapstruct.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<version>8.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>mysql</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
