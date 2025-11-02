@@ -112,6 +112,24 @@ public class PersistenceTest extends MongoDbTestBase {
         });
     }
 
+    /**
+     * The other negative test is, in my opinion, the most interesting test in the test class. It is a test that
+     * verifies correct error handling in the case of updates of stale data—it verifies that the optimistic locking
+     * mechanism works.
+     *
+     * The following is observed from the code:
+     *  • First, the test reads the same entity twice and stores it in two different variables, entity1 and
+     *    entity2.
+     *  • Next, it uses one of the variables, entity1, to update the entity. The update of the entity in the
+     *    database will cause the version field of the entity to be increased automatically by Spring Data.
+     *    The other variable, entity2, now contains stale data, manifested by its version field, which
+     *    holds a lower value than the corresponding value in the database.
+     *  • When the test tries to update the entity using the variable entity2, which contains stale data,
+     *    it is expected to fail by throwing an OptimisticLockingFailureException exception.
+     *  • The test wraps up by asserting that the entity in the database reflects the first update, that is,
+     * contains the name "n1", and that the version field has the value 1; only one update has been
+     * performed on the entity in the database.
+     */
     @Test
     void optimisticLockError() {
 

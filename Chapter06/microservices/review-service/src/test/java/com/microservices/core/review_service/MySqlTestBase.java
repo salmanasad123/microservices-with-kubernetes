@@ -30,6 +30,10 @@ import org.testcontainers.junit.jupiter.Container;
 
 public abstract class MySqlTestBase {
 
+    // A disadvantage of this approach is that each test class will use its own Docker container. Bringing up
+    // MySQL in a Docker container takes a few seconds, typically 10 seconds on my Mac. Running multiple test
+    // classes that use the same type of test container will add this latency for each test class. To
+    // avoid this extra latency, we can use the Single Container Pattern
     @Container
     private static JdbcDatabaseContainer database =
             new MySQLContainer("mysql:8.0.32").withStartupTimeoutSeconds(300);
@@ -60,9 +64,9 @@ public abstract class MySqlTestBase {
     // Ab aapka Spring Boot test automatically Testcontainers DB se connect kar leta hai.
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", database::getJdbcUrl);
-        registry.add("spring.datasource.username", database::getUsername);
-        registry.add("spring.datasource.password", database::getPassword);
+        registry.add("spring.datasource.url", () -> database.getJdbcUrl());
+        registry.add("spring.datasource.username", () -> database.getUsername());
+        registry.add("spring.datasource.password", () -> database.getPassword());
     }
 
 }
