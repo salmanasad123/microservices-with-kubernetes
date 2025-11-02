@@ -1,35 +1,28 @@
-package com.microservices.core.product_service;
+package com.microservices.core.recommendation_service;
 
-import com.microservices.core.product_service.persistence.ProductEntity;
-import com.microservices.core.product_service.persistence.ProductRepository;
+import com.microservices.core.recommendation_service.persistence.RecommendationEntity;
+import com.microservices.core.recommendation_service.persistence.RecommendationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static java.util.stream.IntStream.rangeClosed;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // When using the @DataMongoTest and @DataJpaTest annotations instead of the @SpringBootTest
 // annotation to only start up the MongoDB and SQL database during the integration test.
-@DataMongoTest
-public class PersistenceTest extends MongoDbTestBase {
+public class PersistenceTest {
 
     @Autowired
-    private ProductRepository repository;
+    private RecommendationRepository repository;
 
-    private ProductEntity savedEntity;
+    private RecommendationEntity savedEntity;
 
     // The test class, PersistenceTests, declares a method, setupDb(), annotated with @BeforeEach, which
     // is executed before each test method. The setup method removes any entities from previous tests in
@@ -37,12 +30,13 @@ public class PersistenceTest extends MongoDbTestBase {
     @BeforeEach
     void setupDb() {
         repository.deleteAll();
-        ProductEntity entity = new ProductEntity(1, "n", 1);
 
+        RecommendationEntity entity = new RecommendationEntity(1, 2, "a", 3, "c");
         savedEntity = repository.save(entity);
 
-        assertEqualsProduct(entity, savedEntity);
+        assertEqualsRecommendation(entity, savedEntity);
     }
+
 
     /**
      * This test creates a new entity, verifies that it can be found using the findById method, and wraps up
@@ -52,11 +46,11 @@ public class PersistenceTest extends MongoDbTestBase {
     @Test
     void create() {
 
-        ProductEntity newEntity = new ProductEntity(2, "n", 2);
+        RecommendationEntity newEntity = new RecommendationEntity(1, 3, "a", 3, "c");
         repository.save(newEntity);
 
-        ProductEntity foundEntity = repository.findById(newEntity.getId()).get();
-        assertEqualsProduct(newEntity, foundEntity);
+        RecommendationEntity foundEntity = repository.findById(newEntity.getId()).get();
+        assertEqualsRecommendation(newEntity, foundEntity);
 
         assertEquals(2, repository.count());
     }
@@ -69,11 +63,12 @@ public class PersistenceTest extends MongoDbTestBase {
      */
     @Test
     void update() {
-        savedEntity.setName("n2");
+        savedEntity.setAuthor("a2");
         repository.save(savedEntity);
-        ProductEntity foundEntity = repository.findById(savedEntity.getId()).get();
+
+        RecommendationEntity foundEntity = repository.findById(savedEntity.getId()).get();
         assertEquals(1, (long) foundEntity.getVersion());
-        assertEquals("n2", foundEntity.getName());
+        assertEquals("a2", foundEntity.getAuthor());
     }
 
     /**
@@ -93,10 +88,10 @@ public class PersistenceTest extends MongoDbTestBase {
      */
     @Test
     void getByProductId() {
-        Optional<ProductEntity> entity = repository.findByProductId(savedEntity.getProductId());
+        List<RecommendationEntity> entityList = repository.findByProductId(savedEntity.getProductId());
 
-        assertTrue(entity.isPresent());
-        assertEqualsProduct(savedEntity, entity.get());
+        assertThat(entityList, hasSize(1));
+        assertEqualsRecommendation(savedEntity, entityList.get(0));
     }
 
     /**
@@ -109,7 +104,7 @@ public class PersistenceTest extends MongoDbTestBase {
     @Test
     void duplicateError() {
         assertThrows(DuplicateKeyException.class, () -> {
-            ProductEntity entity = new ProductEntity(savedEntity.getProductId(), "n", 1);
+            RecommendationEntity entity = new RecommendationEntity(1, 2, "a", 3, "c");
             repository.save(entity);
         });
     }
@@ -136,54 +131,33 @@ public class PersistenceTest extends MongoDbTestBase {
     void optimisticLockError() {
 
         // Store the saved entity in two separate entity objects
-        ProductEntity entity1 = repository.findById(savedEntity.getId()).get();
-        ProductEntity entity2 = repository.findById(savedEntity.getId()).get();
+        RecommendationEntity entity1 = repository.findById(savedEntity.getId()).get();
+        RecommendationEntity entity2 = repository.findById(savedEntity.getId()).get();
 
         // Update the entity using the first entity object
-        entity1.setName("n1");
+        entity1.setAuthor("a1");
         repository.save(entity1);
 
-        // Update the entity using the second entity object.
+        //  Update the entity using the second entity object.
         // This should fail since the second entity now holds an old version number, i.e. an Optimistic Lock Error
         assertThrows(OptimisticLockingFailureException.class, () -> {
-            entity2.setName("n2");
+            entity2.setAuthor("a2");
             repository.save(entity2);
         });
 
         // Get the updated entity from the database and verify its new sate
-        ProductEntity updatedEntity = repository.findById(savedEntity.getId()).get();
+        RecommendationEntity updatedEntity = repository.findById(savedEntity.getId()).get();
         assertEquals(1, (int) updatedEntity.getVersion());
-        assertEquals("n1", updatedEntity.getName());
+        assertEquals("a1", updatedEntity.getAuthor());
     }
 
-    @Test
-    void paging() {
-
-        repository.deleteAll();
-
-        List<ProductEntity> newProducts = rangeClosed(1001, 1010)
-                .mapToObj(i -> new ProductEntity(i, "name " + i, i))
-                .collect(Collectors.toList());
-        repository.saveAll(newProducts);
-
-        Pageable nextPage = PageRequest.of(0, 4, ASC, "productId");
-        nextPage = testNextPage(nextPage, "[1001, 1002, 1003, 1004]", true);
-        nextPage = testNextPage(nextPage, "[1005, 1006, 1007, 1008]", true);
-        nextPage = testNextPage(nextPage, "[1009, 1010]", false);
-    }
-
-    private Pageable testNextPage(Pageable nextPage, String expectedProductIds, boolean expectsNextPage) {
-        Page<ProductEntity> productPage = repository.findAll(nextPage);
-        assertEquals(expectedProductIds, productPage.getContent().stream().map(p -> p.getProductId()).collect(Collectors.toList()).toString());
-        assertEquals(expectsNextPage, productPage.hasNext());
-        return productPage.nextPageable();
-    }
-
-    private void assertEqualsProduct(ProductEntity expectedEntity, ProductEntity actualEntity) {
+    private void assertEqualsRecommendation(RecommendationEntity expectedEntity, RecommendationEntity actualEntity) {
         assertEquals(expectedEntity.getId(), actualEntity.getId());
         assertEquals(expectedEntity.getVersion(), actualEntity.getVersion());
         assertEquals(expectedEntity.getProductId(), actualEntity.getProductId());
-        assertEquals(expectedEntity.getName(), actualEntity.getName());
-        assertEquals(expectedEntity.getWeight(), actualEntity.getWeight());
+        assertEquals(expectedEntity.getRecommendationId(), actualEntity.getRecommendationId());
+        assertEquals(expectedEntity.getAuthor(), actualEntity.getAuthor());
+        assertEquals(expectedEntity.getRating(), actualEntity.getRating());
+        assertEquals(expectedEntity.getContent(), actualEntity.getContent());
     }
 }

@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public interface ReviewRepository extends CrudRepository<ReviewEntity, String> {
+public interface ReviewRepository extends CrudRepository<ReviewEntity, Integer> {
 
     // Since SQL databases are transactional, we have to specify the default transaction type—read-only in
     // our case—for the query method, findByProductId(). Every query runs in a transaction.
