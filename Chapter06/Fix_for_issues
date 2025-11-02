@@ -1,0 +1,5 @@
+To build the FAT jars, use this command inside of each service folder.
+for example: Microservices-with-kubernetes\Chapter06\microservices\product-service
+
+Command --> mvn clean package spring-boot:repackage
+
