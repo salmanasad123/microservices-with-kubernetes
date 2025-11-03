@@ -102,6 +102,16 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     }
 
     @Override
+    public Product createProduct(Product body) {
+        return null;
+    }
+
+    @Override
+    public void deleteProduct(int productId) {
+
+    }
+
+    @Override
     public List<Recommendation> getRecommendations(int productId) {
         try {
             // construct the url, and make the api call through restTemplate
