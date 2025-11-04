@@ -33,7 +33,7 @@ public interface ReviewService {
      * @param body A JSON representation of the new review
      * @return A JSON representation of the newly created review
      */
-    @PostMapping(value = "/review", consumes = "application/json", produces = "äpplication/json")
+    @PostMapping(value = "/review", consumes = "application/json", produces = "application/json")
     Review createReview(@RequestBody Review body);
 
 

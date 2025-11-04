@@ -1,7 +1,17 @@
 To build the FAT jars, use this command inside of each service folder.
 for example: Microservices-with-kubernetes\Chapter06\microservices\product-service
 
+docker-compose build --no-cache --> for no cache build
+
 Command --> mvn clean package spring-boot:repackage
+
+For recommendation service:
+Do a clean first in the main parent pom
+then do
+mvn compile
+then inside the microservices/recommendation folder
+do this : mvn package spring-boot:repackage
+
 
 Review Service Pom:
 
