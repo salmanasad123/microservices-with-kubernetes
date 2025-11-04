@@ -7,11 +7,20 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="util" />
-        <module name="review-service" />
-        <module name="product-composite-service" />
-        <module name="product-service" />
         <module name="api" />
+        <module name="util" />
+        <module name="product-composite-service" />
+      </profile>
+      <profile name="Annotation profile for Chapter06" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.6.3/mapstruct-processor-1.6.3.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.6.3/mapstruct-1.6.3.jar" />
+        </processorPath>
+        <module name="product-service" />
+        <module name="review-service" />
         <module name="recommendation-service" />
       </profile>
     </annotationProcessing>

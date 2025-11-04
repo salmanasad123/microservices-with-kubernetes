@@ -15,11 +15,11 @@ public interface RecommendationMapper {
     // with different names. In the mapper class for the recommendation service, the rating entity field is
     // mapped to the API model field, rate, using the following annotations:
     @Mappings({
-            @Mapping(target = "rate", source = "entity.rating"),
+            @Mapping(target = "rate", source = "rating"),
             @Mapping(target = "serviceAddress", ignore = true)})
     Recommendation entityToApi(RecommendationEntity recommendationEntity);
 
-    @Mappings({@Mapping(target = "rating", source = "api.rate"), @Mapping(target = "id", ignore = true),
+    @Mappings({@Mapping(target = "rating", source = "rate"), @Mapping(target = "id", ignore = true),
             @Mapping(target = "version", ignore = true)})
     RecommendationEntity apiToEntity(Recommendation recommendation);
 
