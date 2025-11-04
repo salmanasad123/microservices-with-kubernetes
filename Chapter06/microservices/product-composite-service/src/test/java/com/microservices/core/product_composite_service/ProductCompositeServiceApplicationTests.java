@@ -147,4 +147,5 @@ class ProductCompositeServiceApplicationTests {
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus);
 	}
+
 }

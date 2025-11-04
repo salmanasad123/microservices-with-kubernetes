@@ -1,8 +1,7 @@
 package com.example.api.api.composite.product;
 
 import jakarta.websocket.server.PathParam;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Describing a restful api in the java interface instead of directly in the java class
@@ -22,4 +21,19 @@ public interface ProductCompositeService {
 
     @GetMapping(value = "/product-composite/{productId}", produces = "application/json")
     ProductAggregate getProduct(@PathVariable(value = "productId") int productId);
+
+    /**
+     * Sample usage, see below.
+     *
+     * curl -X POST $HOST:$PORT/product-composite \
+     *   -H "Content-Type: application/json" --data \
+     *   '{"productId":123,"name":"product 123","weight":123}'
+     *
+     * @param body A JSON representation of the new composite product
+     */
+    @PostMapping(value = "/product-composite", consumes = "application/json")
+    void createProduct(@RequestBody ProductAggregate body);
+
+    @DeleteMapping(value = "/product-composite/{productId}")
+    void deleteProduct(@PathVariable int productId);
 }

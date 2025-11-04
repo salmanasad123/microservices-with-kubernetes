@@ -1,10 +1,23 @@
 server.port: 7001
 server.error.include-message: always
 
+# With the database in place, we now need to set up the configuration for the core microservices so they
+# know how to connect to their databases. This is set up in each core microservice’s configuration file,
+# application.yml
+# Setting the log level for MongoTemplate to DEBUG will allow us to see which MongoDB statements are executed in the log.
+spring.data.mongodb:
+  host: localhost
+  port: 27017
+  database: product-db
+  logging:
+  level:
+  org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+
 logging:
   level:
     root: INFO
     com.microservices: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
 
 management:
   endpoints:
@@ -26,3 +39,6 @@ management:
 spring.config.activate.on-profile: docker
 
 server.port: 8080
+
+# When running inside Docker using the Spring profile, docker, the database is expected to be reachable on mongodb:27017.
+spring.data.mongodb.host: mongodb

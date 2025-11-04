@@ -5,7 +5,6 @@ public class ReviewSummary {
     private  int reviewId;
     private  String author;
     private  String subject;
-
     private String content;
 
     public ReviewSummary() {
