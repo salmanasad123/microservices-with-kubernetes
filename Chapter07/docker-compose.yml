@@ -1,0 +1,84 @@
+# For each microservice, we specify the following:
+# • The name of the microservice. This will also be the hostname of the container in the internal Docker network.
+# • A build directive that specifies where to find the Dockerfile that was used to build the Docker image.
+# A memory limit of 512 MB. 512 MB should be sufficient for all our microservices
+# The environment variables that will be set up for the container. In our case, we used these to
+# specify which Spring profile to use.
+
+# For the product-composite service, we will also specify port mappings – we will expose its port so it
+# can be reached from outside Docker. The other microservices will not be accessible from the outside.
+
+# To avoid microservices trying to connect to databases before they are up and running, the product
+# and recommendation services are declared as dependent on the MongoDB database. In depends on, mongodb is the
+# name of the service [mongodb].
+# This means that Docker Compose will not start up the microservice containers until the database
+# containers are launched and reported as healthy by their health checks.
+
+version: '2.1'
+
+services:
+  product:
+    build: microservices/product-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  recommendation:
+    build: microservices/recommendation-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  review:
+    build: microservices/review-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  product-composite:
+    build: microservices/product-composite-service
+    mem_limit: 512m
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  mongodb:
+    image: mongo:6.0.4
+    mem_limit: 512m
+    ports:
+      - "27017:27017"
+    command: mongod
+    healthcheck:
+      test: "mongostat -n 1"
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  # MySQL, we also declare some environment variables, The root password, The name of the database that will be
+  # created on container startup, a username and password for a user that is set up for the database on container startup.
+  # We also declare a health check that Docker will run to determine the status of the MongoDB and MySQL databases.
+  mysql:
+    image: mysql:8.0.32
+    mem_limit: 512m
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpwd
+      - MYSQL_DATABASE=review-db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pwd
+    healthcheck:
+      test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 2s
+      retries: 60

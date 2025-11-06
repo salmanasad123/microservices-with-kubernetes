@@ -1,0 +1,45 @@
+server.port: 7003
+server.error.include-message: always
+
+# With the database in place, we now need to set up the configuration for the core microservices so they
+# know how to connect to their databases. This is set up in each core microservice’s configuration file,
+# application.yml
+# By default, Hibernate will be used by Spring Data JPA as JPA’s EntityManager.
+# Strongly recommend to set this property to "none" in a production environment!
+# The spring.jpa.hibernate.ddl-auto property is used to tell Spring Data JPA to create new or update existing SQL tables during startup.
+spring.jpa.hibernate.ddl-auto: update
+
+spring.datasource:
+  url: jdbc:mysql://localhost/review-db
+  username: user
+  password: pwd
+
+# This means that the Spring Boot application will wait for up to 60 seconds during startup to establish a database connection.
+spring.datasource.hikari.initializationFailTimeout: 60000
+
+logging:
+  level:
+    root: INFO
+    com.microservices: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
+
+
+# Values in a profile override values from the default profile. By using YAML files, multiple Spring profiles
+#  can be placed in the same file, separated by ---
+---
+
+# To handle the different configurations that are required when running locally without Docker and
+# when running the microservices as Docker containers, we will use Spring profiles. Now, we will create a new
+# Spring profile named docker to be used when we run our microservices as containers in Docker.
+
+
+spring.config.activate.on-profile: docker
+
+server.port: 8080
+
+spring.datasource:
+  url: jdbc:mysql://mysql/review-db
+

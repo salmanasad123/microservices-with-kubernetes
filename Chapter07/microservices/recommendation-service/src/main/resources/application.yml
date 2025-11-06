@@ -1,0 +1,33 @@
+server.port: 7002
+server.error.include-message: always
+
+# With the database in place, we now need to set up the configuration for the core microservices so they
+# know how to connect to their databases. This is set up in each core microservice’s configuration file,
+# application.yml
+# Setting the log level for MongoTemplate to DEBUG will allow us to see which MongoDB statements are executed in the log.
+spring.data.mongodb:
+  host: localhost
+  port: 27017
+  database: recommendation-db
+
+logging:
+  level:
+    root: INFO
+    com.microservices: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+
+
+# Values in a profile override values from the default profile. By using YAML files, multiple Spring profiles
+#  can be placed in the same file, separated by ---
+---
+
+# To handle the different configurations that are required when running locally without Docker and
+# when running the microservices as Docker containers, we will use Spring profiles. Now, we will create a new
+# Spring profile named docker to be used when we run our microservices as containers in Docker.
+
+spring.config.activate.on-profile: docker
+
+server.port: 8080
+
+# When running inside Docker using the Spring profile, docker, the database is expected to be reachable on mongodb:27017.
+spring.data.mongodb.host: mongodb
