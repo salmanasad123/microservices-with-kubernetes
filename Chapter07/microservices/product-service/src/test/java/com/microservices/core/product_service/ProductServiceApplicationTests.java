@@ -1,5 +1,6 @@
 package com.microservices.core.product_service;
 
+import com.microservices.core.product_service.persistence.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,10 +21,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  */
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-class ProductServiceApplicationTests {
+class ProductServiceApplicationTests extends MongoDbTestBase{
 
     @Autowired
     private WebTestClient client;
+
+    @Autowired
+    private ProductRepository repository;
 
     @Test
     void getProductById() {

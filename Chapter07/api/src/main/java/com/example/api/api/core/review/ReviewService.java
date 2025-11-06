@@ -11,6 +11,21 @@ import java.util.List;
  * is a good way of separating the API definition from its implementation.
  * We are using java interfaces to describe restful Apis and model classes to describe the data the
  * api uses.
+ *
+ *
+ * Reviews ek ek karke asynchronously aate hain, aur system har ek ko process karta hai jaise hi wo
+ * milta hai — bina poora list ka wait kiye.
+ *
+ * Flux<Review> koi “ready-made list” nahi hoti.
+ * Ye ek pipeline define karta hai:
+ * Jab koi subscribe karega, tab data aana start hoga.
+ * Har review ek ek karke emit hoga:
+ * onNext(review1)
+ * onNext(review2)
+ * ...
+ * onComplete()
+ * So Flux acts like a Publisher that emits events.
+ *
  */
 
 public interface ReviewService {

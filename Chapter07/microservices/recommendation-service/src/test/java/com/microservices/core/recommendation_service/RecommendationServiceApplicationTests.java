@@ -1,5 +1,7 @@
 package com.microservices.core.recommendation_service;
 
+import com.microservices.core.recommendation_service.persistence.RecommendationRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,10 +19,18 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  */
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-class RecommendationServiceApplicationTests {
+class RecommendationServiceApplicationTests extends MongoDbTestBase {
 
     @Autowired
     private WebTestClient client;
+
+    @Autowired
+    private RecommendationRepository repository;
+
+    @BeforeEach
+    void setupDb() {
+        repository.deleteAll().block();
+    }
 
     @Test
     void getRecommendationsByProductId() {
@@ -96,4 +106,5 @@ class RecommendationServiceApplicationTests {
                 .jsonPath("$.path").isEqualTo("/recommendation")
                 .jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
     }
+
 }

@@ -11,9 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 @RestController
 public class RecommendationServiceImpl implements RecommendationService {
@@ -35,39 +38,53 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
-    public List<Recommendation> getRecommendations(int productId) {
+    public Flux<Recommendation> getRecommendations(int productId) {
         if (productId < 1) {
             throw new InvalidInputException("Invalid productId: " + productId);
         }
 
-        List<RecommendationEntity> entityList = recommendationRepository.findByProductId(productId);
-        List<Recommendation> recommendationList = recommendationMapper.entityListToApiList(entityList);
+        LOG.info("Will get recommendations for product with id={}", productId);
 
-        recommendationList.forEach((Recommendation recommendation) -> {
-            recommendation.setServiceAddress(serviceUtil.getServiceAddress());
-        });
+        Flux<Recommendation> map = recommendationRepository.findByProductId(productId)
+                .log(LOG.getName(), Level.FINE)
+                .map((RecommendationEntity recommendationEntity) -> {
+                    return recommendationMapper.entityToApi(recommendationEntity);
+                })
+                .map((Recommendation recommendation) -> {
+                    recommendation.setServiceAddress(recommendation.getServiceAddress());
+                    return recommendation;
+                });
 
-        LOG.debug("/recommendation response size: {}", recommendationList.size());
-
-        return recommendationList;
+        return map;
     }
 
     @Override
-    public Recommendation createRecommendation(Recommendation body) {
-        try {
+    public Mono<Recommendation> createRecommendation(Recommendation body) {
 
-            RecommendationEntity recommendationEntity = recommendationMapper.apiToEntity(body);
-            RecommendationEntity newEntity = recommendationRepository.save(recommendationEntity);
-            return recommendationMapper.entityToApi(newEntity);
-        } catch (DuplicateKeyException exception) {
-            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Recommendation Id:" + body.getRecommendationId());
+        if (body.getProductId() < 1) {
+            throw new InvalidInputException("Invalid productId: " + body.getProductId());
         }
+
+        RecommendationEntity recommendationEntity = recommendationMapper.apiToEntity(body);
+        Mono<Recommendation> recommendation = recommendationRepository.save(recommendationEntity)
+                .log(LOG.getName(), Level.FINE)
+                .onErrorMap(DuplicateKeyException.class, (DuplicateKeyException exception) -> {
+                    throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() +
+                            ", Recommendation Id:" + body.getRecommendationId());
+
+                })
+                .map((RecommendationEntity entity) -> {
+                    return recommendationMapper.entityToApi(entity);
+                });
+
+            return recommendation;
     }
 
     // We will be deleting the entire list of recommendations associated with a product.
     @Override
-    public void deleteRecommendations(int productId) {
+    public Mono<Void> deleteRecommendations(int productId) {
         LOG.debug("deleteRecommendations: tries to delete recommendations for the product with productId: {}", productId);
-        recommendationRepository.deleteAll(recommendationRepository.findByProductId(productId));
+        Mono<Void> voidMono = recommendationRepository.deleteAll(recommendationRepository.findByProductId(productId));
+        return voidMono;
     }
 }
