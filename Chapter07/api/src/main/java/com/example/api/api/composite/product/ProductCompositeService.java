@@ -8,6 +8,12 @@ import reactor.core.publisher.Mono;
  * is a good way of separating the API definition from its implementation.
  * We are using java interfaces to describe restful Apis and model classes to describe the data the
  * api uses.
+ *
+ * The create, read, and delete services exposed by the product composite microservice will be
+ * based on non-blocking synchronous APIs. The composite microservice is assumed to have
+ * clients on both web and mobile platforms, as well as clients coming from other organizations
+ * rather than the ones that operate the system landscape. Therefore, synchronous APIs seem
+ * like a natural match.
  */
 
 public interface ProductCompositeService {

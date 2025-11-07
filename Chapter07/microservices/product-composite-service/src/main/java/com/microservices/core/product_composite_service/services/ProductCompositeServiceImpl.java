@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ import static java.util.logging.Level.FINE;
  * This is the api implementation class. In the same way that we did for the core services, the composite service
  * implements its API interface, ProductCompositeService, and is annotated with @RestController to mark it as
  * a REST service
- *
+ * <p>
  * The create, read, and delete services exposed by the product composite microservice will be
  * based on non-blocking synchronous APIs. The composite microservice is assumed to have
  * clients on both web and mobile platforms, as well as clients coming from other organizations
@@ -55,11 +56,15 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
      * an array, named values. The array will contain a product, a list of recommendations, and a
      * list of reviews. The actual aggregation of the responses from the three API calls is handled by
      * the same helper method as before, createProductAggregate(), without any changes.
-     *
+     * <p>
      * The parameters after the lambda function are a list of the requests that the zip method will
      * call in parallel, one Mono object per request. In our case, we send in three Mono objects that
      * were created by the methods in the integration class, one for each request that is sent to each
      * core microservice.
+     * <p>
+     * The composite service will make reactive, that is, non-blocking, calls in parallel to the three core services. When
+     * the composite service has received responses from all of the core services, it will create a composite
+     * response and send it back to the caller.
      */
     @Override
     public Mono<ProductAggregate> getProduct(int productId) {
@@ -67,7 +72,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
         LOG.debug("getCompositeProduct: lookup a product aggregate for productId: {}", productId);
 
         return Mono.zip((Object[] values) -> {
-                                return createProductAggregate((Product) values[0], (List<Recommendation>) values[1],
+                            return createProductAggregate((Product) values[0], (List<Recommendation>) values[1],
                                     (List<Review>) values[2], serviceUtil.getServiceAddress());
                         },
                         integration.getProduct(productId),
@@ -84,15 +89,21 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
      * recommendation, and review and call the corresponding create methods in the integration layer
      *
      * @param body A JSON representation of the new composite product
+     *             <p>
+     *             When the composite service receives HTTP requests for the creation and deletion of composite products,
+     *             it will publish the corresponding events to the core services on their topics.
      */
     @Override
     public Mono<Void> createProduct(ProductAggregate body) {
 
         try {
+
+            List<Mono> monoList = new ArrayList<>();
+
             LOG.debug("createCompositeProduct: creates a new composite entity for productId: {}", body.getProductId());
 
             Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
-            integration.createProduct(product);
+            monoList.add(integration.createProduct(product));
 
             if (body.getRecommendations() != null) {
                 body.getRecommendations().forEach((RecommendationSummary recommendationSummary) -> {
@@ -100,7 +111,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
                             recommendationSummary.getRecommendationId(), recommendationSummary.getAuthor(),
                             recommendationSummary.getRate(), recommendationSummary.getContent(),
                             null);
-                    integration.createRecommendation(recommendation);
+                    monoList.add(integration.createRecommendation(recommendation));
                 });
             }
 
@@ -108,11 +119,18 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
                 body.getReviews().forEach((ReviewSummary reviewSummary) -> {
                     Review review = new Review(body.getProductId(), reviewSummary.getReviewId(), reviewSummary.getAuthor(),
                             reviewSummary.getSubject(), reviewSummary.getContent(), null);
-                    integration.createReview(review);
+                    monoList.add(integration.createReview(review));
                 });
             }
 
-            LOG.debug("createCompositeProduct: composite entities created for productId: {}", body.getProductId());
+            Mono<Void> voidMono = Mono.zip((Object[] r) -> {
+                        return "";
+                    }, monoList.toArray(new Mono[0]))
+                    .doOnError(ex -> LOG.warn("createCompositeProduct failed: {}", ex.toString()))
+                    .then();
+
+            return voidMono;
+
         } catch (RuntimeException re) {
             LOG.warn("createCompositeProduct failed", re);
             throw re;
@@ -128,13 +146,26 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     @Override
     public Mono<Void> deleteProduct(int productId) {
 
-        LOG.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
+        try {
+            LOG.info("Will delete a product aggregate for product.id: {}", productId);
 
-        integration.deleteProduct(productId);
-        integration.deleteReviews(productId);
-        integration.deleteRecommendations(productId);
+            return Mono.zip(
+                            (Object[] r) -> {
+                                return "";
+                            },
+                            integration.deleteProduct(productId),
+                            integration.deleteRecommendations(productId),
+                            integration.deleteReviews(productId))
 
-        LOG.debug("deleteCompositeProduct: aggregate entities deleted for productId: {}", productId);
+                    .doOnError((Throwable ex) -> {
+                        LOG.warn("delete failed: {}", ex.toString());
+                    })
+                    .log(LOG.getName(), FINE).then();
+
+        } catch (RuntimeException re) {
+            LOG.warn("deleteCompositeProduct failed: {}", re.toString());
+            throw re;
+        }
     }
 
     private ProductAggregate createProductAggregate(Product product, List<Recommendation> recommendations,

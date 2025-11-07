@@ -1,12 +1,19 @@
 package com.microservices.core.recommendation_service;
 
+import com.example.api.api.core.recommendation.Recommendation;
+import com.example.api.api.event.Event;
 import com.microservices.core.recommendation_service.persistence.RecommendationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.function.Consumer;
+
+import static com.example.api.api.event.Event.Type.CREATE;
+import static com.example.api.api.event.Event.Type.DELETE;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
@@ -26,6 +33,10 @@ class RecommendationServiceApplicationTests extends MongoDbTestBase {
 
     @Autowired
     private RecommendationRepository repository;
+
+    @Autowired
+    @Qualifier("messageProcessor")
+    private Consumer<Event<Integer, Recommendation>> messageProcessor;
 
     @BeforeEach
     void setupDb() {
@@ -107,4 +118,26 @@ class RecommendationServiceApplicationTests extends MongoDbTestBase {
                 .jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
     }
 
+
+    /**
+     * Note that we use the accept() method in the Consumer function interface declaration to invoke the
+     * message processor. This means that we skip the messaging system in the tests and call the message
+     * processor directly.
+     */
+    private void sendCreateRecommendationEvent(int productId, int recommendationId) {
+        Recommendation recommendation = new Recommendation(productId, recommendationId, "Author " + recommendationId, recommendationId, "Content " + recommendationId, "SA");
+        Event<Integer, Recommendation> event = new Event(CREATE, productId, recommendation);
+        messageProcessor.accept(event);
+    }
+
+
+    /**
+     * Note that we use the accept() method in the Consumer function interface declaration to invoke the
+     * message processor. This means that we skip the messaging system in the tests and call the message
+     * processor directly.
+     */
+    private void sendDeleteRecommendationEvent(int productId) {
+        Event<Integer, Recommendation> event = new Event(DELETE, productId, null);
+        messageProcessor.accept(event);
+    }
 }

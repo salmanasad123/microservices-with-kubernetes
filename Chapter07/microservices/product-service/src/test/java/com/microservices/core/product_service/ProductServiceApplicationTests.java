@@ -1,11 +1,18 @@
 package com.microservices.core.product_service;
 
+import com.example.api.api.core.product.Product;
+import com.example.api.api.event.Event;
 import com.microservices.core.product_service.persistence.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.function.Consumer;
+
+import static com.example.api.api.event.Event.Type.CREATE;
+import static com.example.api.api.event.Event.Type.DELETE;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
@@ -28,6 +35,10 @@ class ProductServiceApplicationTests extends MongoDbTestBase{
 
     @Autowired
     private ProductRepository repository;
+
+    @Autowired
+    @Qualifier("messageProcessor")
+    private Consumer<Event<Integer, Product>> messageProcessor;
 
     @Test
     void getProductById() {
@@ -90,4 +101,22 @@ class ProductServiceApplicationTests extends MongoDbTestBase{
                 .jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
     }
 
+
+    /**
+     * Note that we use the accept() method in the Consumer function interface declaration to invoke the
+     * message processor. This means that we skip the messaging system in the tests and call the message
+     * processor directly.
+     */
+    private void sendCreateProductEvent(int productId) {
+        Product product = new Product(productId, "Name " + productId, productId, "SA");
+        Event<Integer, Product> event = new Event(CREATE, productId, product);
+        messageProcessor.accept(event);
+    }
+    // Note that we use the accept() method in the Consumer function interface declaration to invoke the
+    // message processor. This means that we skip the messaging system in the tests and call the message
+    // processor directly.
+    private void sendDeleteProductEvent(int productId) {
+        Event<Integer, Product> event = new Event(DELETE, productId, null);
+        messageProcessor.accept(event);
+    }
 }

@@ -8,6 +8,9 @@ import reactor.core.publisher.Mono;
  * is a good way of separating the API definition from its implementation.
  * We are using java interfaces to describe restful Apis and model classes to describe the data the
  * api uses.
+ *
+ * The read services provided by the core microservices will also be developed as non-blocking
+ * synchronous APIs since there is an end user waiting for their responses.
  */
 
 public interface ProductService {
@@ -17,6 +20,8 @@ public interface ProductService {
     // called with the productId parameter set to 123.
     // To make the APIs of the core services reactive, we need to update their methods so that they return
     // either a Mono or Flux object.
+    // The read services provided by the core microservices will also be developed as non-blocking
+    // synchronous APIs since there is an end user waiting for their responses.
     @GetMapping(value = "/product/{productId}", produces = "application/json")
     Mono<Product> getProduct(@PathVariable(value = "productId") int productId);
 

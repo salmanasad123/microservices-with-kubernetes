@@ -31,6 +31,10 @@ import java.util.List;
 public interface ReviewService {
 
     /**
+     *
+     * The read services provided by the core microservices will also be developed as non-blocking
+     * synchronous APIs since there is an end user waiting for their responses.
+     *
      * Sample usage: "curl $HOST:$PORT/review?productId=1".
      *
      * @param productId Id of the product
@@ -41,6 +45,10 @@ public interface ReviewService {
     public Flux<Review> getReviews(@RequestParam(value = "productId", required = true) int productId);
 
     /**
+     *
+     * The create and delete services provided by the core microservices will be developed as
+     * event-driven asynchronous services, meaning that they will listen for create and delete events
+     * on topics dedicated to each microservice.
      * Sample usage, see below.
      *
      * curl -X POST $HOST:$PORT/review \
@@ -55,6 +63,10 @@ public interface ReviewService {
 
 
     /**
+     *
+     * The create and delete services provided by the core microservices will be developed as
+     * event-driven asynchronous services, meaning that they will listen for create and delete events
+     * on topics dedicated to each microservice.
      * Sample usage: "curl -X DELETE $HOST:$PORT/review?productId=1".
      *
      * @param productId Id of the product

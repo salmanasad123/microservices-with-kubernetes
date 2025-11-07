@@ -65,6 +65,8 @@ public class RecommendationServiceImpl implements RecommendationService {
             throw new InvalidInputException("Invalid productId: " + body.getProductId());
         }
 
+        // Note from the preceding code that the onErrorMap() method is used to map the DuplicateKeyException
+        // persistence exception to our own InvalidInputException exception.
         RecommendationEntity recommendationEntity = recommendationMapper.apiToEntity(body);
         Mono<Recommendation> recommendation = recommendationRepository.save(recommendationEntity)
                 .log(LOG.getName(), Level.FINE)

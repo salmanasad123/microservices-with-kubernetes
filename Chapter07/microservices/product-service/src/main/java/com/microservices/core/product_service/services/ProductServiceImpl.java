@@ -7,10 +7,10 @@ import com.example.api.api.exceptions.NotFoundException;
 import com.example.util.util.ServiceUtil;
 import com.microservices.core.product_service.persistence.ProductEntity;
 import com.microservices.core.product_service.persistence.ProductRepository;
-import com.mongodb.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
@@ -87,6 +87,9 @@ public class ProductServiceImpl implements ProductService {
         // Data receive karta hai (onNext)
         // Response serialize karta hai (onComplete)
         // Error handle karta hai (onError)
+        // Jab tu Mono.error(new NotFoundException(...)) emit karta hai, to wo normal exception throw nahi karta,
+        // balki wo ek reactive error signal emit karta hai —
+        // aur Spring WebFlux is signal ko catch karke Global Exception Handler tak forward karta hai
         Mono<Product> productEntity = productRepository.findByProductId(productId)
                 .switchIfEmpty(Mono.error(new NotFoundException("No product found for productId: " + productId)))
                 .log(LOG.getName(), FINE)
@@ -108,11 +111,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Product> createProduct(Product body) {
 
+        // Note from the preceding code that the onErrorMap() method is used to map the DuplicateKeyException
+        // persistence exception to our own InvalidInputException exception.
+
         ProductEntity productEntity = mapper.apiToEntity(body);
         Mono<Product> newEntity = productRepository.save(productEntity)
                 .log(LOG.getName(), FINE)
                 .onErrorMap(org.springframework.dao.DuplicateKeyException.class,
-                        ex -> {
+                        (DuplicateKeyException ex) -> {
                             return new InvalidInputException("Duplicate key, Product Id: " + body.getProductId());
                         })
                 .map((ProductEntity e) -> {
