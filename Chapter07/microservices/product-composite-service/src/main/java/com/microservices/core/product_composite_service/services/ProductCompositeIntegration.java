@@ -19,10 +19,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import static org.springframework.http.HttpMethod.GET;
 
@@ -31,7 +36,25 @@ import static org.springframework.http.HttpMethod.GET;
  * and implements the three core services’ API interfaces.
  * The product-composite service contains an Integration layer used to handle the communication
  * with the three core microservices. The core microservices will all have a Persistence layer used for
- * communicating with their databases
+ * communicating with their databases.
+ *
+ *
+ * The create, read, and delete services exposed by the product composite microservice will be
+ * based on non-blocking synchronous APIs. The composite microservice is assumed to have
+ * clients on both web and mobile platforms, as well as clients coming from other organizations
+ * rather than the ones that operate the system landscape. Therefore, synchronous APIs seem
+ * like a natural match.
+ *
+ * The create and delete services provided by the core microservices will be developed as
+ * event-driven asynchronous services, meaning that they will listen for create and delete events
+ * on topics dedicated to each microservice.
+ *
+ * The synchronous APIs provided by the composite microservices to create and delete aggregated
+ * product information will publish create and delete events on these topics. If the publish opera
+ * tion succeeds, it will return with a 202 (Accepted) response; otherwise, an error response will
+ * be returned. The 202 response differs from a normal 200 (OK) response – it indicates that the
+ * request has been accepted, but not fully processed. Instead, the processing will be completed
+ * asynchronously and independently of the 202 response
  */
 
 @Component
@@ -39,6 +62,10 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 
     private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeIntegration.class);
     private final RestTemplate restTemplate;
+
+    // In the ProductCompositeIntegration integration class, we have replaced the blocking HTTP client,
+    // RestTemplate, with a non-blocking HTTP client, WebClient, that comes with Spring 5.
+    private final WebClient webClient;
 
     // Object Mapper is a JSON mapper, which is used for accessing error messages in case of errors,
     // and the configuration values that we have set up in the property file.
@@ -50,6 +77,9 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 
     // the values app.product-service.host is specified in the application.yml file for composite-service
     // the @Value annotation is used to read and inject the property value defined in yaml file.
+    // In the constructor, the WebClient is auto-injected. We build the WebClient instance without
+    // any configuration: If customization is required, for example,
+    // setting up common headers or filters, it can be done using the builder.
     @Autowired
     public ProductCompositeIntegration(RestTemplate restTemplate, ObjectMapper mapper,
                                        @Value("${app.product-service.host}") String productServiceHost,
@@ -57,11 +87,12 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
                                        @Value("${app.recommendation-service.host}") String recommendationServiceHost,
                                        @Value("${app.recommendation-service.port}") int recommendationServicePort,
                                        @Value("${app.review-service.host}") String reviewServiceHost,
-                                       @Value("${app.review-service.port}") int reviewServicePort) {
+                                       @Value("${app.review-service.port}") int reviewServicePort,
+                                       WebClient.Builder webClient) {
 
         this.restTemplate = restTemplate;
         this.mapper = mapper;
-
+        this.webClient = webClient.build();
         productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product";
         recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation";
         reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review";
@@ -69,7 +100,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 
 
     @Override
-    public Product getProduct(int productId) {
+    public Mono<Product> getProduct(int productId) {
 
         try {
             String url = productServiceUrl + "/" + productId;
@@ -78,22 +109,19 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
             // We are using restTemplate to make the actual api calls to other core services.
             // The expected response is a Product object. It can be expressed in the call to getForObject() by specifying the Product.class class that RestTemplate will
             // map the JSON response to.
-            Product product = restTemplate.getForObject(url, Product.class);
-
-            LOG.debug("Found a product with id: {}", product.getProductId());
+            Mono<Product> product = webClient.get().uri(url).retrieve()
+                    .bodyToMono(Product.class)
+                    .log(LOG.getName(), Level.FINE);
 
             return product;
 
-        } catch (HttpClientErrorException ex) {
-
+        } catch (WebClientResponseException ex) {
             switch (HttpStatus.resolve(ex.getStatusCode().value())) {
                 case NOT_FOUND:
                     throw new NotFoundException(getErrorMessage(ex));
-
                 case UNPROCESSABLE_ENTITY:
                     throw new InvalidInputException(getErrorMessage(ex));
-
-                default:
+                    default:
                     LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
                     LOG.warn("Error body: {}", ex.getResponseBodyAsString());
                     throw ex;
@@ -104,7 +132,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     // It simply delegates the responsibility of sending the HTTP request to the RestTemplate object and
     // delegates error handling to the helper method, handleHttpClientException.
     @Override
-    public Product createProduct(Product body) {
+    public Mono<Product> createProduct(Product body) {
 
         try {
             String url = productServiceUrl;
@@ -120,7 +148,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     }
 
     @Override
-    public void deleteProduct(int productId) {
+    public Mono<Void> deleteProduct(int productId) {
         try {
             String url = productServiceUrl;
             LOG.debug("Will call the deleteProduct API on URL: {}", url);
@@ -132,29 +160,38 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
         }
     }
 
+    /**
+     * If the API call to the product service fails with an HTTP error response, the whole API request will fail.
+     * The onErrorMap() method in WebClient will call our handleException(ex) method, which maps the
+     * HTTP exceptions thrown by the HTTP layer to our own exceptions, for example, a NotFoundException
+     * or a InvalidInputException.
+     *  However, if calls to the product service succeed but the call to either the recommendation or review
+     * API fails, we don’t want to let the whole request fail. Instead, we want to return as much information
+     * as is available back to the caller. Therefore, instead of propagating an exception in these cases, we
+     * will instead return an empty list of recommendations or reviews. To suppress the error, we will make
+     * the call onErrorResume(error -> empty())
+     */
     @Override
-    public List<Recommendation> getRecommendations(int productId) {
+    public Flux<Recommendation> getRecommendations(int productId) {
         try {
             // construct the url, and make the api call through restTemplate
             String url = recommendationServiceUrl + "?productId=" + productId;
 
             LOG.debug("Will call getRecommendations API on URL: {}", url);
-            List<Recommendation> recommendations = restTemplate
-                    .exchange(url, GET, null, new ParameterizedTypeReference<List<Recommendation>>() {
-                    })
-                    .getBody();
+            Flux<Recommendation> recommendationFlux = webClient.get().uri(url).retrieve()
+                    .bodyToFlux(Recommendation.class)
+                    .log(LOG.getName(), Level.FINE);
 
-            LOG.debug("Found {} recommendations for a product with id: {}", recommendations.size(), productId);
-            return recommendations;
+            return recommendationFlux;
 
         } catch (Exception ex) {
             LOG.warn("Got an exception while requesting recommendations, return zero recommendations: {}", ex.getMessage());
-            return new ArrayList<>();
+            return Flux.empty();
         }
     }
 
     @Override
-    public Recommendation createRecommendation(Recommendation body) {
+    public Mono<Recommendation> createRecommendation(Recommendation body) {
         try {
             String url = recommendationServiceUrl;
             LOG.debug("Will post a new recommendation to URL: {}", url);
@@ -170,7 +207,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     }
 
     @Override
-    public void deleteRecommendations(int productId) {
+    public Mono<Void> deleteRecommendations(int productId) {
         try {
             String url = recommendationServiceUrl + "?productId=" + productId;
             LOG.debug("Will call the deleteRecommendations API on URL: {}", url);
@@ -183,37 +220,27 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     }
 
     @Override
-    public List<Review> getReviews(int productId) {
+    public Flux<Review> getReviews(int productId) {
 
         try {
             String url = reviewServiceUrl + "?productId=" + productId;
 
             LOG.debug("Will call getReviews API on URL: {}", url);
-            /**
-             * a more advanced method, exchange(), has to be used. The reason for this is the automatic mapping from
-             * a JSON response to a model class that RestTemplate performs. The getRecommendations() and
-             * getReviews() methods expect a generic list in the responses, that is, List<Recommendation>
-             * and List<Review>. Since generics don’t hold any type of information at runtime, we can’t specify
-             * that the methods expect a generic list in their responses. Instead, we can use a helper class from the Spring Framework,
-             * ParameterizedTypeReference, which is designed to resolve this problem by holding the type
-             * information at runtime. This means that RestTemplate can figure out what class to map the JSON responses to.
-             */
-            List<Review> reviews = restTemplate
-                    .exchange(url, GET, null, new ParameterizedTypeReference<List<Review>>() {
-                    })
-                    .getBody();
 
-            LOG.debug("Found {} reviews for a product with id: {}", reviews.size(), productId);
-            return reviews;
+            Flux<Review> reviewFlux = webClient.get().uri(url).retrieve()
+                    .bodyToFlux(Review.class)
+                    .log(LOG.getName(), Level.FINE);
+
+            return reviewFlux;
 
         } catch (Exception ex) {
             LOG.warn("Got an exception while requesting reviews, return zero reviews: {}", ex.getMessage());
-            return new ArrayList<>();
+            return Flux.empty();
         }
     }
 
     @Override
-    public Review createReview(Review body) {
+    public Mono<Review> createReview(Review body) {
         try {
             String url = reviewServiceUrl;
             LOG.debug("Will post a new review to URL: {}", url);
@@ -229,7 +256,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     }
 
     @Override
-    public void deleteReviews(int productId) {
+    public Mono<Void> deleteReviews(int productId) {
         try {
             String url = reviewServiceUrl + "?productId=" + productId;
             LOG.debug("Will call the deleteReviews API on URL: {}", url);
@@ -241,7 +268,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
         }
     }
 
-    private String getErrorMessage(HttpClientErrorException ex) {
+    private String getErrorMessage(WebClientResponseException ex) {
         try {
             return mapper.readValue(ex.getResponseBodyAsString(), HttpErrorInfo.class).getMessage();
         } catch (IOException ioex) {

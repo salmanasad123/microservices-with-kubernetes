@@ -1,7 +1,7 @@
 package com.example.api.api.composite.product;
 
-import jakarta.websocket.server.PathParam;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 /**
  * Describing a restful api in the java interface instead of directly in the java class
@@ -20,7 +20,7 @@ public interface ProductCompositeService {
      */
 
     @GetMapping(value = "/product-composite/{productId}", produces = "application/json")
-    ProductAggregate getProduct(@PathVariable(value = "productId") int productId);
+    Mono<ProductAggregate> getProduct(@PathVariable(value = "productId") int productId);
 
     /**
      * Sample usage, see below.
@@ -32,8 +32,8 @@ public interface ProductCompositeService {
      * @param body A JSON representation of the new composite product
      */
     @PostMapping(value = "/product-composite", consumes = "application/json")
-    void createProduct(@RequestBody ProductAggregate body);
+    Mono<Void> createProduct(@RequestBody ProductAggregate body);
 
     @DeleteMapping(value = "/product-composite/{productId}")
-    void deleteProduct(@PathVariable int productId);
+    Mono<Void> deleteProduct(@PathVariable int productId);
 }
