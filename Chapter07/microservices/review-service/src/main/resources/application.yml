@@ -61,7 +61,8 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
 
 
 # Values in a profile override values from the default profile. By using YAML files, multiple Spring profiles

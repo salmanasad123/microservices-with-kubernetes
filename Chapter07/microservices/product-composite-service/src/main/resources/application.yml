@@ -53,6 +53,8 @@ logging:
     root: INFO
     com.example: DEBUG
 
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
 
 #  For the product-composite-service, things are a bit more complicated since it needs to know where
 # to find the core services. When we ran all the services on localhost, it was configured to use localhost

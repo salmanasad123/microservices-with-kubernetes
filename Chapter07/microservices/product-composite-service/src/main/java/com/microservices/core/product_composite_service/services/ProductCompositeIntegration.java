@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,7 @@ import java.util.logging.Level;
 
 import static com.example.api.api.event.Event.Type.CREATE;
 import static com.example.api.api.event.Event.Type.DELETE;
+import static java.util.logging.Level.FINE;
 import static org.springframework.http.HttpMethod.GET;
 
 /**
@@ -287,5 +289,34 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
                 .setHeader("partitionKey", event.getKey())
                 .build();
         streamBridge.send(bindingName, message);
+    }
+
+    // In the ProductCompositeIntegration class, we have added helper methods for checking the health
+    // of the three core microservices.
+    public Mono<Health> getProductHealth() {
+        return getHealth(productServiceUrl);
+    }
+
+    public Mono<Health> getRecommendationHealth() {
+        return getHealth(recommendationServiceUrl);
+    }
+
+    public Mono<Health> getReviewHealth() {
+        return getHealth(reviewServiceUrl);
+    }
+
+    // This method will call / ping the actuator health endpoint for all the microservices.
+    private Mono<Health> getHealth(String url) {
+        url += "/actuator/health";
+
+        LOG.debug("Will call the Health API on URL: {}", url);
+        return webClient.get().uri(url).retrieve().bodyToMono(String.class)
+                .map((String s) -> {
+                    return new Health.Builder().up().build();
+                })
+                .onErrorResume((Throwable ex) -> {
+                    return Mono.just(new Health.Builder().down(ex).build());
+                })
+                .log(LOG.getName(), FINE);
     }
 }

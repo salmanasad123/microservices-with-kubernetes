@@ -53,6 +53,9 @@ spring.rabbitmq:
   username: guest
   password: guest
 
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
+
 
 # Values in a profile override values from the default profile. By using YAML files, multiple Spring profiles
 #  can be placed in the same file, separated by ---
