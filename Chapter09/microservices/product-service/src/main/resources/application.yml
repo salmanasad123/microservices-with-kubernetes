@@ -6,6 +6,18 @@ server.error.include-message: always
 # calls to the microservice.
 spring.application.name: product
 
+app.eureka-server: localhost
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${app.eureka-server}:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
 # With the database in place, we now need to set up the configuration for the core microservices so they
 # know how to connect to their databases. This is set up in each core microservice’s configuration file,
 # application.yml
@@ -81,6 +93,8 @@ management:
 spring.config.activate.on-profile: docker
 
 server.port: 8080
+
+eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
 
 # When running inside Docker using the Spring profile, docker, the database is expected to be reachable on mongodb:27017.
 spring.data.mongodb.host: mongodb
