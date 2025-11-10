@@ -1,6 +1,11 @@
 server.port: 7001
 server.error.include-message: always
 
+# It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
+# microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
+# calls to the microservice.
+spring.application.name: product
+
 # With the database in place, we now need to set up the configuration for the core microservices so they
 # know how to connect to their databases. This is set up in each core microservice’s configuration file,
 # application.yml

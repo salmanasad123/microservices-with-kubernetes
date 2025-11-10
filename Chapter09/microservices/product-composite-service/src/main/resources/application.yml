@@ -1,18 +1,26 @@
 server.port: 7000
 server.error.include-message: always
 
+# It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
+# microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
+# calls to the microservice.
+spring.application.name: product-composite
+
 # To avoid hardcoding the address information for the core services into the source code of the composite
-# microservice, the composite service uses a property file where information on how to find the core services is stored
-app:
-  product-service:
-    host: localhost
-    port: 7001
-  recommendation-service:
-    host: localhost
-    port: 7002
-  review-service:
-    host: localhost
-    port: 7003
+# microservice, the composite service uses a property file where information on how to find the core services is stored.
+
+# We can now get rid of our hardcoded configuration of available microservices in application.
+# yml. It looks like this because we are using eureka to find the instances of microservices.
+#app:
+#  product-service:
+#    host: localhost
+#    port: 7001
+#  recommendation-service:
+#    host: localhost
+#    port: 7002
+#  review-service:
+#    host: localhost
+#    port: 7003
 
 # We also need to set up the configuration for the messaging system, to be able to publish events; this
 # is similar to what we did for the consumers. Declaring RabbitMQ as the default messaging system,

@@ -25,7 +25,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  * and validate the responses
  */
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eureka.client.enabled=false"})
 class RecommendationServiceApplicationTests extends MongoDbTestBase {
 
     @Autowired

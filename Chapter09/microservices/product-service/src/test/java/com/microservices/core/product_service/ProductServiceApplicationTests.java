@@ -27,7 +27,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  * simpler since they don’t need to mock anything
  */
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+// When running tests on a single microservice, we don’t want to depend on having the Eureka
+// server up and running. Therefore, we will disable the use of Netflix Eureka in all Spring Boot
+// tests, that is, JUnit tests annotated with @SpringBootTest. This can be done by adding the
+// eureka.client.enabled property and setting it to false in the annotation, like so
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eureka.client.enabled=false"})
 class ProductServiceApplicationTests extends MongoDbTestBase{
 
     @Autowired

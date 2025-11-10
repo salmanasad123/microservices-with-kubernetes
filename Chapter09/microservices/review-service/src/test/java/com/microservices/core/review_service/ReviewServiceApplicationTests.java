@@ -16,7 +16,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  * and validate the responses
  */
 
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
+        "spring.cloud.stream.defaultBinder=rabbit",
+        "logging.level.se.magnus=DEBUG",
+        "eureka.client.enabled=false"})
 class ReviewServiceApplicationTests {
 
     @Autowired

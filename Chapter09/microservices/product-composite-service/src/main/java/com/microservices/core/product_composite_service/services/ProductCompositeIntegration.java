@@ -89,11 +89,24 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 
     private final Scheduler publishEventScheduler;
 
+    // The corresponding code in the integration class, ProductCompositeIntegration, that handled
+    // the hardcoded configuration is simplified and replaced by a declaration of the base URLs to
+    // the APIs of the core microservices.
+    // The hostnames in the preceding URLs are not actual DNS names. Instead, they are the virtual
+    // hostnames that are used by the microservices when they register themselves to the Eureka
+    // server, in other words, the values of the spring.application.name property.
+    // Ex: http://product koi real hostname nahi hai (jaise localhost ya 192.168.x.x). Ye dummy logical names hain.
+    // Main apna naam product ke naam se register kar raha hoon Eureka pe. in other words, the values of the
+    // spring.application.name property.
+    private static final String PRODUCT_SERVICE_URL = "http://product";
+    private static final String RECOMMENDATION_SERVICE_URL = "http://recommendation";
+    private static final String REVIEW_SERVICE_URL = "http://review";
+
     // the values app.product-service.host is specified in the application.yml file for composite-service
     // the @Value annotation is used to read and inject the property value defined in yaml file.
-    // In the constructor, the WebClient is auto-injected. We build the WebClient instance without
-    // any configuration: If customization is required, for example,
-    // setting up common headers or filters, it can be done using the builder.
+    // In the constructor, the WebClient is auto-injected. We build the WebClient instance without any
+    // configuration: If customization is required, for example, setting up common headers or filters,
+    // it can be done using the builder.
     @Autowired
     public ProductCompositeIntegration(RestTemplate restTemplate, ObjectMapper mapper,
                                        @Value("${app.product-service.host}") String productServiceHost,
