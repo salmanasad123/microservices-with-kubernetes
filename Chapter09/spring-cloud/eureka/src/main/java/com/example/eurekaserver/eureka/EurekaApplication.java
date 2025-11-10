@@ -2,6 +2,7 @@ package com.example.eurekaserver.eureka;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 
 /**
  * Spring Cloud comes with an abstraction of how to communicate with a discovery service such as
@@ -33,6 +34,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * after another before the first one is called once more.
  */
 @SpringBootApplication
+@EnableEurekaServer
 public class EurekaApplication {
 
 	public static void main(String[] args) {

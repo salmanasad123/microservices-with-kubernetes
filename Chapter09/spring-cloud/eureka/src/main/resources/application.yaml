@@ -24,5 +24,13 @@ eureka:
 
 management.endpoints.web.exposure.include: "*"
 
+---
+
+spring.config.activate.on-profile: docker
+
+server.port: 8761
+
+
+
 
 

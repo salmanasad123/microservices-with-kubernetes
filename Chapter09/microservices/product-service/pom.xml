@@ -134,6 +134,10 @@
             <artifactId>spring-cloud-stream-test-binder</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+        </dependency>
         <!--  To be able to register a microservice instance in the Eureka server, we need to do the following -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
