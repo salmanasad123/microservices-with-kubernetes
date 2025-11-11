@@ -5,6 +5,7 @@ server.port: 8080
 # calls to the microservice.
 spring.application.name: gateway
 
+# The ${app.eureka-server} property is resolved by Spring?s property mechanism, depending on what Spring profile is activated
 app.eureka-server: localhost
 
 # Since Spring Cloud Gateway will use Netflix Eureka to find the microservices it will route traffic to,
@@ -17,7 +18,7 @@ eureka:
     registryFetchIntervalSeconds: 5
   instance:
     leaseRenewalIntervalInSeconds: 5
-    leaseExpirationDurationInSeconds:
+    leaseExpirationDurationInSeconds: 5
 
 #  A route is defined by the following:
 # 1. Predicates, which select a route based on information in the incoming HTTP request
@@ -35,22 +36,22 @@ eureka:
 spring.cloud.gateway.routes:
 
   - id: product-composite # The name of the route is product-composite
-    uri: lb://product-composite
+    uri: lb://product-composite # this url is where the request will be forwarded by the gateway
     predicates:
       - Path=/product-composite/**  #  is used to specify what requests this route should match. ** matches zero or more elements in the path.
 
-#  Eureka exposes both an API and a web page for its clients. To provide a clean separation between the
-#  API and the web page in Eureka, we will set up routes as follows:
-#  1. Requests sent to the edge server with the path starting with /eureka/api/ should be handled as a call to the Eureka API.
-#  2. Requests sent to the edge server with the path starting with /eureka/web/ should be handled as a call to the Eureka web page.
-# For example if a request comes to the GATEWAY server like this :
-# http://gateway-server:8080/eureka/api/apps
-# This will match the predicate : Path=/eureka/api/{segment}, and in this case the segment will become /apps
-# Then the request will be re-written using the filters "SetPath" and it will become : /eureka/apps. And then the
-# gateway will forward it to the following url : http://${app.eureka-server}:8761/eureka/apps.
+  #  Eureka exposes both an API and a web page for its clients. To provide a clean separation between the
+  #  API and the web page in Eureka, we will set up routes as follows:
+  #  1. Requests sent to the edge server with the path starting with /eureka/api/ should be handled as a call to the Eureka API.
+  #  2. Requests sent to the edge server with the path starting with /eureka/web/ should be handled as a call to the Eureka web page.
+  # For example if a request comes to the GATEWAY server like this :
+  # http://gateway-server:8080/eureka/api/apps
+  # This will match the predicate : Path=/eureka/api/{segment}, and in this case the segment will become /apps
+  # Then the request will be re-written using the filters "SetPath" and it will become : /eureka/apps. And then the
+  # gateway will forward it to the following url : http://${app.eureka-server}:8761/eureka/apps.
 
   - id: eureka-api # The name of the route is eureka-api
-    uri: http://${app.eureka-server}:8761
+    uri: http://${app.eureka-server}:8761  # this url is where the request will be forwarded by the gateway
     predicates:
       - Path=/eureka/api/{segment}
     filters:
@@ -64,14 +65,43 @@ spring.cloud.gateway.routes:
       - SetPath=/
 
 
+# for testing purposes:
+# we will try out host-based routing, where Spring Cloud Gateway uses the hostname of the incoming request to determine
+# where to route the request.
+# we can use the Host route predicate to select requests with specific hostnames, and the SetPath filter to set
+# the desired HTTP code in the request path.
+  - id: host_route_200
+    uri: http://httpstat.us
+    predicates:
+      - Host=i.feel.lucky:8080
+      - Path=/headerrouting/**
+    filters:
+      - SetPath=/200
+
+  - id: host_route_418
+    uri: http://httpstat.us
+    predicates:
+      - Host=im.a.teapot:8080
+      - Path=/headerrouting/**
+    filters:
+      - SetPath=/418
+
+  - id: host_route_501
+    uri: http://httpstat.us
+    predicates:
+      - Path=/headerrouting/**
+    filters:
+      - SetPath=/501
+
+management.endpoint.gateway.enabled: true
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"
 
 logging:
   level:
-  root: INFO
-  org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
-  org.springframework.cloud.gateway: TRACE
+    root: INFO
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+    org.springframework.cloud.gateway: TRACE
 
 ---
 
