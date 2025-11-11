@@ -1,0 +1,80 @@
+server.port: 8080
+
+# It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
+# microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
+# calls to the microservice.
+spring.application.name: gateway
+
+app.eureka-server: localhost
+
+# Since Spring Cloud Gateway will use Netflix Eureka to find the microservices it will route traffic to,
+# it must be configured as a Eureka client.
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${app.eureka-server}:8761/eureka/
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds:
+
+#  A route is defined by the following:
+# 1. Predicates, which select a route based on information in the incoming HTTP request
+# 2. Filters, which can modify both the request and/or the response
+# 3. A destination URI, which describes where to send a request
+# 4. An ID, that is, the name of the route
+
+# If we, for example, want to route incoming requests where the URL path starts with /product
+# composite/ to our product-composite service, we can specify a routing rule like this:
+
+# uri: lb://product-composite: If the route is selected by its predicates, the request will be
+# routed to the service that is named product-composite in the discovery service, Netflix Eureka.
+# The protocol lb:// is used to direct Spring Cloud Gateway to use the client-side load balancer
+# to look up the destination in the discovery service.
+spring.cloud.gateway.routes:
+
+  - id: product-composite # The name of the route is product-composite
+    uri: lb://product-composite
+    predicates:
+      - Path=/product-composite/**  #  is used to specify what requests this route should match. ** matches zero or more elements in the path.
+
+#  Eureka exposes both an API and a web page for its clients. To provide a clean separation between the
+#  API and the web page in Eureka, we will set up routes as follows:
+#  1. Requests sent to the edge server with the path starting with /eureka/api/ should be handled as a call to the Eureka API.
+#  2. Requests sent to the edge server with the path starting with /eureka/web/ should be handled as a call to the Eureka web page.
+# For example if a request comes to the GATEWAY server like this :
+# http://gateway-server:8080/eureka/api/apps
+# This will match the predicate : Path=/eureka/api/{segment}, and in this case the segment will become /apps
+# Then the request will be re-written using the filters "SetPath" and it will become : /eureka/apps. And then the
+# gateway will forward it to the following url : http://${app.eureka-server}:8761/eureka/apps.
+
+  - id: eureka-api # The name of the route is eureka-api
+    uri: http://${app.eureka-server}:8761
+    predicates:
+      - Path=/eureka/api/{segment}
+    filters:
+      - SetPath=/eureka/{segment}
+
+  - id: eureka-web-start
+    uri: http://${app.eureka-server}:8761
+    predicates:
+      - Path=/eureka/web
+    filters:
+      - SetPath=/
+
+
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
+
+logging:
+  level:
+  root: INFO
+  org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+  org.springframework.cloud.gateway: TRACE
+
+---
+
+spring.config.activate.on-profile: docker
+
+app.eureka-server: eureka
