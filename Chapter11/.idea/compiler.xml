@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="authorizationserver" />
         <module name="api" />
         <module name="util" />
         <module name="product-composite-service" />
@@ -28,6 +29,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="api" target="17" />
+      <module name="authorizationserver" target="17" />
       <module name="Chapter03" target="17" />
       <module name="eureka" target="17" />
       <module name="gateway" target="17" />
@@ -41,6 +43,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="api" options="" />
+      <module name="authorizationserver" options="" />
       <module name="eureka" options="" />
       <module name="product-composite-service" options="" />
       <module name="product-service" options="" />

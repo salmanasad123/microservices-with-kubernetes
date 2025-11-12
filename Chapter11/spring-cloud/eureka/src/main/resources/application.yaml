@@ -1,6 +1,11 @@
 server:
     port: 8761
 
+# Credentials for the user are set up in the configuration file
+app:
+    eureka-username: u
+    eureka-password: p
+
 # Parameters for the Eureka server, prefixed with eureka.server.
 # Parameters for Eureka clients, prefixed with eureka.client. This is for clients who want to
 # communicate with a Eureka server.

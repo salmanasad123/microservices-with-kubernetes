@@ -128,6 +128,7 @@ services:
 # Update the Docker Compose file, docker-compose.yml, with environment variables for the location, the password
 # for the new certificate, and a volume that maps to the folder where the new certificate is placed.
 # file:/keystore/edge-test.p12 ka matlab hai certificate container ke /keystore folder me hai.
+# # To indicate that the edge server talks HTTPS and not HTTP, we also change the port from 8080 to 8443 in the server.port parameter
   gateway:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -138,5 +139,15 @@ services:
     build: spring-cloud/gateway
     mem_limit: 512m
     ports:
-      - "8443:8443" # To indicate that the edge server talks HTTPS and not HTTP, we also change the port from 8080 to 8443 in the server.port parameter
+      - "8443:8443"
 
+  auth-server:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    build: spring-cloud/authorizationserver
+    mem_limit: 512m
+    healthcheck:
+      test: [ "CMD", "curl", "-fs", "http://localhost:9999/actuator/health" ]
+      interval: 5s
+      timeout: 2s
+      retries: 60

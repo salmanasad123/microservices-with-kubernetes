@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Chapter03.iml" filepath="$PROJECT_DIR$/.idea/Chapter03.iml" />
       <module fileurl="file://$PROJECT_DIR$/api/api.iml" filepath="$PROJECT_DIR$/api/api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/spring-cloud/authorizationserver/authorizationserver.iml" filepath="$PROJECT_DIR$/spring-cloud/authorizationserver/authorizationserver.iml" />
       <module fileurl="file://$PROJECT_DIR$/spring-cloud/eureka/eureka.iml" filepath="$PROJECT_DIR$/spring-cloud/eureka/eureka.iml" />
       <module fileurl="file://$PROJECT_DIR$/spring-cloud/gateway/gateway.iml" filepath="$PROJECT_DIR$/spring-cloud/gateway/gateway.iml" />
       <module fileurl="file://$PROJECT_DIR$/microservices/product-composite-service/product-composite-service.iml" filepath="$PROJECT_DIR$/microservices/product-composite-service/product-composite-service.iml" />

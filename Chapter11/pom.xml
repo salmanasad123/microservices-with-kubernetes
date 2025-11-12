@@ -23,7 +23,7 @@
         <module>util</module>
         <module>spring-cloud/eureka</module>
         <module>spring-cloud/gateway</module>
-
+        <module>spring-cloud/authorizationserver</module>
     </modules>
 
     <properties>

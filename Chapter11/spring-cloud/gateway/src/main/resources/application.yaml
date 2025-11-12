@@ -82,12 +82,32 @@ spring.cloud.gateway.routes:
     filters:
       - SetPath=/
 
+  - id: eureka-web-other
+    uri: http://${app.eureka-server}:8761
+    predicates:
+      - Path=/eureka/**
 
-# for testing purposes:
-# we will try out host-based routing, where Spring Cloud Gateway uses the hostname of the incoming request to determine
-# where to route the request.
-# we can use the Host route predicate to select requests with specific hostnames, and the SetPath filter to set
-# the desired HTTP code in the request path.
+  - id: oauth2-server
+    uri: lb://auth-server
+    predicates:
+      - Path=/oauth2/**
+
+  - id: oauth2-login
+    uri: lb://auth-server
+    predicates:
+      - Path=/login/**
+
+  - id: oauth2-error
+    uri: lb://auth-server
+    predicates:
+      - Path=/error/**
+
+
+  # for testing purposes:
+  # we will try out host-based routing, where Spring Cloud Gateway uses the hostname of the incoming request to determine
+  # where to route the request.
+  # we can use the Host route predicate to select requests with specific hostnames, and the SetPath filter to set
+  # the desired HTTP code in the request path.
   - id: host_route_200
     uri: http://httpstat.us
     predicates:
