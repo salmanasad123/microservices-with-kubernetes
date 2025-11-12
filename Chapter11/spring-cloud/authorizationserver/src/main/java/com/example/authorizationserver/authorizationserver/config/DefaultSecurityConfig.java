@@ -26,14 +26,15 @@ public class DefaultSecurityConfig {
     // formatter:off
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorizeRequests) -> {
+        http.authorizeHttpRequests((AuthorizeHttpRequestsConfigurer<HttpSecurity>.
+                                            AuthorizationManagerRequestMatcherRegistry authorizeRequests) -> {
+
                             authorizeRequests
                                     .requestMatchers("/actuator/**").permitAll()
                                     .anyRequest().authenticated();
-                        }
-                )
+                        })
                 .formLogin(withDefaults());
+
         return http.build();
     }
 

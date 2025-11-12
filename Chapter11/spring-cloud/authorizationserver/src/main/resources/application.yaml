@@ -1,3 +1,4 @@
+# Authorization server will run on port 9999
 server.port: 9999
 server.forward-headers-strategy: framework
 
@@ -8,6 +9,7 @@ app:
   eureka-password: p
   eureka-server: localhost
 
+# The authorization server has been integrated with Eureka for service discovery in the same way as the other projects.
 eureka:
   client:
     serviceUrl:

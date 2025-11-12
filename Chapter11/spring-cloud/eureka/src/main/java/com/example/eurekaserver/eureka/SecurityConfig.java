@@ -19,11 +19,10 @@ import org.springframework.security.web.SecurityFilterChain;
  * Now we will use HTTP Basic authentication to restrict access to the APIs and web pages on the discovery server,
  * Netflix Eureka. This means that we will require a user to supply a username and password to get access.
  * Changes are required both on the Eureka server and in the Eureka clients.
+ * Eureka server is now secured with Http Basic Authentication
  */
-
 @Configuration
 public class SecurityConfig {
-
 
     private String username;
     private String password;
