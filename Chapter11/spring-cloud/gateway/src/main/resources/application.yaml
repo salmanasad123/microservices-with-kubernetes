@@ -23,8 +23,12 @@ server.ssl:
   key-store-password: password
   key-alias: localhost
 
-# The ${app.eureka-server} property is resolved by Spring?s property mechanism, depending on what Spring profile is activated
-app.eureka-server: localhost
+# The ${app.eureka-server} property is resolved by Spring's property mechanism, depending on what Spring profile is activated
+app:
+  eureka-username: u
+  eureka-password: p
+  eureka-server: localhost
+  auth-server: localhost
 
 # Since Spring Cloud Gateway will use Netflix Eureka to find the microservices it will route traffic to,
 # it must be configured as a Eureka client.
@@ -131,6 +135,8 @@ spring.cloud.gateway.routes:
     filters:
       - SetPath=/501
 
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
+
 management.endpoint.gateway.enabled: true
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"
@@ -141,8 +147,17 @@ logging:
     org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
     org.springframework.cloud.gateway: TRACE
 
+
+# In the docker-profile which is after --- we are overriding only few properties, the properties that are
+# not overridden (defined again) will take the values from above (before ---). Springboot merges both these
+# documents and apply profile based overrides.
+# Values in a profile override values from the default profile. But other values comes as it is.
+# By using YAML files, multiple Spring profiles can be placed in the same file, separated by ---
+
 ---
 
 spring.config.activate.on-profile: docker
 
-app.eureka-server: eureka
+app:
+  eureka-server: eureka
+  auth-server: auth-server
