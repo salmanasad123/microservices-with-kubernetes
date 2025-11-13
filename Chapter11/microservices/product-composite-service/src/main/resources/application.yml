@@ -1,6 +1,9 @@
 server.port: 7000
 server.error.include-message: always
 
+spring.autoconfigure.exclude:
+  - org.springframework.boot.autoconfigure.security.servlet.OAuth2ResourceServerJwtConfiguration
+
 # It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
 # microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
 # calls to the microservice.
@@ -101,6 +104,10 @@ spring.config.activate.on-profile: docker
 
 server.port: 8080
 
+app:
+  eureka-server: eureka
+  auth-server: auth-server
+
 # The below hardcoded hosts are no longer needed as we are using eureka to get details.
 #app:
 #  product-service:
@@ -113,9 +120,6 @@ server.port: 8080
 #    host: review
 #    port: 8080
 
-app:
-  eureka-server: eureka
-  auth-server: auth-server
 
 spring.rabbitmq.host: rabbitmq
 

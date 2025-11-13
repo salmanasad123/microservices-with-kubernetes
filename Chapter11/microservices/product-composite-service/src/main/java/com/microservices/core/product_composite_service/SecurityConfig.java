@@ -68,16 +68,9 @@ public class SecurityConfig {
                 // .oauth2ResourceServer().jwt() specifies that authorization will be based on OAuth
                 // 2.0 access tokens encoded as JWTs.
                 .oauth2ResourceServer((ServerHttpSecurity.OAuth2ResourceServerSpec oAuth2ResourceServerSpec) -> {
-                    oAuth2ResourceServerSpec.jwt(jwt -> {
-                    });
+                    oAuth2ResourceServerSpec.jwt();
                 });
 
         return http.build();
-    }
-
-    @Bean
-    public ReactiveJwtDecoder reactiveJwtDecoder(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri) {
-        // Use JWKS URI directly
-        return NimbusReactiveJwtDecoder.withJwkSetUri(issuerUri + "/oauth2/jwks").build();
     }
 }
