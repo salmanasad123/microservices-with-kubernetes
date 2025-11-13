@@ -9,9 +9,15 @@ import com.example.util.util.ServiceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -36,6 +42,8 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeServiceImpl.class);
     private final ServiceUtil serviceUtil;
     private ProductCompositeIntegration integration;
+
+    private final SecurityContext nullSecCtx = new SecurityContextImpl();
 
     @Autowired
     public ProductCompositeServiceImpl(ServiceUtil serviceUtil, ProductCompositeIntegration integration) {
@@ -199,5 +207,47 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
         ServiceAddresses serviceAddresses = new ServiceAddresses(serviceAddress, productAddress, reviewAddress, recommendationAddress);
 
         return new ProductAggregate(productId, name, weight, recommendationSummaries, reviewSummaries, serviceAddresses);
+    }
+
+    private Mono<SecurityContext> getLogAuthorizationInfoMono() {
+        return getSecurityContextMono().doOnNext((SecurityContext sc) -> {
+            logAuthorizationInfo(sc);
+        });
+    }
+
+    /**
+     * Ye Spring Security ke reactive context se current user ka SecurityContext nikalta hai.
+     * Isme JWT aur authentication details hoti hain.
+     * Agar context empty ho (koi authentication nahi hai), to ek nullSecCtx (dummy context) return karega.
+     */
+    private Mono<SecurityContext> getSecurityContextMono() {
+        return ReactiveSecurityContextHolder.getContext().defaultIfEmpty(nullSecCtx);
+    }
+
+    private void logAuthorizationInfo(SecurityContext sc) {
+        if (sc != null && sc.getAuthentication() != null && sc.getAuthentication() instanceof JwtAuthenticationToken) {
+            Jwt jwtToken = ((JwtAuthenticationToken)sc.getAuthentication()).getToken();
+            logAuthorizationInfo(jwtToken);
+        } else {
+            LOG.warn("No JWT based Authentication supplied, running tests are we?");
+        }
+    }
+
+    // A method, logAuthorizationInfo(), has been added to log relevant parts from the JWT-encoded access token
+    // upon each call to the API.
+    private void logAuthorizationInfo(Jwt jwt) {
+        if (jwt == null) {
+            LOG.warn("No JWT supplied, running tests are we?");
+        } else {
+            if (LOG.isDebugEnabled()) {
+                URL issuer = jwt.getIssuer();
+                List<String> audience = jwt.getAudience();
+                Object subject = jwt.getClaims().get("sub");
+                Object scopes = jwt.getClaims().get("scope");
+                Object expires = jwt.getClaims().get("exp");
+
+                LOG.debug("Authorization info: Subject: {}, scopes: {}, expires {}: issuer: {}, audience: {}", subject, scopes, expires, issuer, audience);
+            }
+        }
     }
 }

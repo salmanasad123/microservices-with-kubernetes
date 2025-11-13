@@ -135,6 +135,9 @@ spring.cloud.gateway.routes:
     filters:
       - SetPath=/501
 
+# spring.security.oauth2.resourceserver.jwt.issuer-uri ka kaam ye hota hai ke resource server
+# (yani yahan product-composite) ko batana “kis authorization server ne token issue kiya tha” —
+# aur uska public key (JWK set) kahan se milega taake woh JWT verify kar sake.
 spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
 
 management.endpoint.gateway.enabled: true

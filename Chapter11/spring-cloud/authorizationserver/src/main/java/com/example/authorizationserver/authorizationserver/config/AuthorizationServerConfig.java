@@ -1,6 +1,7 @@
 package com.example.authorizationserver.authorizationserver.config;
 
 import com.example.authorizationserver.authorizationserver.jose.Jwks;
+import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -14,6 +15,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -123,6 +126,49 @@ import java.util.function.Consumer;
  * authorizationGrantType:  	flow types PhotoApp supports (AUTHORIZATION_CODE in this scenario)
  * scope(OidcScopes.OPENID):	requesting identity info from Google via OIDC
  * scope("product:read"):	    requesting access to Google Drive API (read photos)
+ *
+ *
+ * Token Validation Phase — Resource Server side
+ *
+ * Now the user (Salman) ne PhotoApp ko access token mil gaya from Google Authorization Server.
+ * Ab PhotoApp Google Drive API (Resource Server) ko hit karega to access your photos.
+ *
+ * Request Example:
+ * GET https://www.googleapis.com/drive/v3/files
+ * Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6...
+ *
+ * Ab yahaan se token validation ka process start hota hai.
+ * 🔹 Step 1: Resource Server receives request
+ * Google Drive API (Resource Server) ko request milti hai header me access token ke sath.
+ * 🔹 Step 2: Token validation options
+ * Resource Server ke paas do options hote hain token verify karne ke liye:
+ * Local Validation (Most common)
+ * Resource Server auth-server ke jwk-set-uri (public key endpoint) se ek baar public key fetch karta hai.
+ * Example config:
+ * spring.security.oauth2.resourceserver.jwt.issuer-uri: https://accounts.google.com
+ * OR
+ * spring.security.oauth2.resourceserver.jwt.jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+ *
+ * Jab first request aati hai, Spring Security automatically:
+ * issuer-uri ya jwk-set-uri ke endpoint ko hit karta hai.
+ * Public keys (JWKs) fetch karta hai aur local cache me store kar leta hai.
+ * Us JWT token ko locally decode + signature verify karta hai using that public key.
+ * Agar signature valid hai → token trusted hai.
+ * Agar expire ya tampered hai → reject kar deta hai (401 Unauthorized).
+ * 👉 So yahaan resource server token ko auth server ko bhejta nahi, balki khud verify karta hai using public key.
+ * ⚙️ Internally kya hota hai (Spring Boot Resource Server me)
+ * Spring Security JwtDecoder bean banata hai jo issuer-uri se JWKSet fetch karta hai:
+ *
+ * @Bean
+ * public JwtDecoder jwtDecoder() {
+ *     return JwtDecoders.fromIssuerLocation("https://accounts.google.com");
+ * }
+ *
+ * Aur phir jab request aati hai:
+ * JWT decode hota hai,
+ * Signature verify hoti hai using RSA public key,
+ * Claims (sub, iss, exp, aud, scope, etc.) extract hote hain.
+ * Agar sab valid ho to request allow hoti hai aur security context me user set ho jata hai.
  */
 
 @Configuration(proxyBeanMethods = false)
@@ -130,6 +176,13 @@ public class AuthorizationServerConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
+    /**
+     * Ye method ek Spring Security Filter Chain bana raha hai specifically Authorization Server ke
+     * endpoints ke liye (jaise /oauth2/authorize, /oauth2/token, /oauth2/jwks, /userinfo, etc.)
+     * @param http
+     * @return
+     * @throws Exception
+     */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -137,29 +190,41 @@ public class AuthorizationServerConfig {
         // Replaced this call with the implementation of applyDefaultSecurity() to be able to add a custom redirect_uri validator
         // OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
+        // create authorization server configurer.
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
                 new OAuth2AuthorizationServerConfigurer();
 
-        // Register a custom redirect_uri validator, that allows redirect uris based on https://localhost during development
+        // Register a custom redirect_uri validator, that allows redirect uris based on https://localhost during development.
+        // Ye line ek custom validator register kar rahi hai jo redirect_uri validate karega jab client authorization request bhejta hai.
+        // Normally, redirect URIs strictly match karni chahiye un URIs se jo client registration me diye gaye hain.
+        //Lekin dev environment me https://localhost ko allow karne ke liye ye custom validator lagaya gaya hai.
         authorizationServerConfigurer.authorizationEndpoint(authorizationEndpoint ->
-                        authorizationEndpoint.authenticationProviders(configureAuthenticationValidator()));
+                authorizationEndpoint.authenticationProviders(configureAuthenticationValidator()));
 
+        // Ye matcher batata hai ke ye security chain sirf un endpoints par apply hogi jo authorization server ke endpoints hain —
+        // jaise /oauth2/authorize, /oauth2/token, /oauth2/jwks, /userinfo, etc.
         RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
 
         http.securityMatcher(endpointsMatcher)
-                .authorizeHttpRequests(authorize ->
-                        authorize.anyRequest().authenticated())
+                .authorizeHttpRequests((AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorize) -> {
+                    authorize.anyRequest().authenticated();
+                })
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
                 .apply(authorizationServerConfigurer);
 
+        // Ye line OpenID Connect 1.0 ko enable karti hai — jisse /userinfo, /openid-configuration,
+        // aur ID Token issue karne wali functionality activate hoti hai.
+        // Without this, server sirf OAuth2 tokens issue karega;
+        // With this, wo user identity (ID token) bhi provide karega.
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
 
-        http
-                .exceptionHandling(exceptions ->
-                        exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                )
-                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+        http.exceptionHandling((ExceptionHandlingConfigurer<HttpSecurity> exceptions) -> {
+                    exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"));
+                })
+                .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> {
+                    httpSecurityOAuth2ResourceServerConfigurer.jwt();
+                });
 
         return http.build();
     }
@@ -226,23 +291,54 @@ public class AuthorizationServerConfig {
 
     }
 
+    /**
+     * Ye bean Authorization Server ko batata hai ke tokens sign karne ke liye kaunsi keys use karni hain.
+     * JWK = JSON Web Key, ek standard format hai jisme public/private keys store hoti hain.
+     * RSAKey rsaKey = Jwks.generateRsa();
+     * → Ye ek RSA key pair (public + private key) bana raha hai.
+     */
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
         RSAKey rsaKey = Jwks.generateRsa();
         JWKSet jwkSet = new JWKSet(rsaKey);
-        return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
+        JWKSource<SecurityContext> securityContextJWKSource =
+                (JWKSelector jwkSelector, SecurityContext securityContext) -> {
+            return jwkSelector.select(jwkSet);
+        };
+        return securityContextJWKSource;
     }
 
+    /**
+     * JwtDecoder ka kaam hota hai incoming JWT tokens verify aur decode karna.
+     * Ye bean kehta hai ke authorization server apni JWK source (public key) use kare
+     * tokens verify karne ke liye.
+     * So jab koi request aati hai /userinfo ya koi resource endpoint pe,
+     * ye token ke signature ko check karega using the public key from jwkSource.
+     */
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
     }
 
+    /**
+     * Ye bean Authorization Server ke basic metadata/config define karta hai.
+     * issuer("http://auth-server:9999") → ye batata hai ke ye tokens kahan se issue hue hain.
+     * Ye value token ke iss (issuer) claim me jaati hai.
+     * Resource servers isse check karte hain jab wo token verify karte hain (jaise issuer-uri config me).
+     *
+     * Ye bean batata hai:
+     * “Main authorization server hoon aur mera official address hai http://auth-server:9999.”
+     */
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().issuer("http://auth-server:9999").build();
     }
 
+    /**
+     * Ye method ek custom validator setup karta hai for authorization code requests.
+     * OAuth2AuthorizationCodeRequestAuthenticationProvider
+     * → ye wo component hai jo handle karta hai jab koi client /oauth2/authorize endpoint hit karta hai.
+     */
     private Consumer<List<AuthenticationProvider>> configureAuthenticationValidator() {
         return (authenticationProviders) ->
                 authenticationProviders.forEach((authenticationProvider) -> {
@@ -258,6 +354,16 @@ public class AuthorizationServerConfig {
                     }
                 });
     }
+
+    /**
+     * Ye class actual redirect_uri validation logic implement karti hai.
+     * Jab koi client (e.g. "writer") /oauth2/authorize call karta hai,
+     * wo ek redirect_uri bhejta hai (jahan code bhejna hota hai).
+     * Ye validator check karta hai:
+     * if (!registeredClient.getRedirectUris().contains(requestedRedirectUri)) throw error;
+     * Agar client ne registered URIs me ye URI nahi di → request invalid.
+     * Agar URI match kar jae → “Redirect uri is OK!” log kar deta hai.
+     */
 
     static class CustomRedirectUriValidator implements Consumer<OAuth2AuthorizationCodeRequestAuthenticationContext> {
 

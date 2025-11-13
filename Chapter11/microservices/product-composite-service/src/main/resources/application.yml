@@ -79,6 +79,11 @@ logging:
     root: INFO
     com.example: DEBUG
 
+# spring.security.oauth2.resourceserver.jwt.issuer-uri ka kaam ye hota hai ke resource server
+# (yani yahan product-composite) ko batana “kis authorization server ne token issue kiya tha” —
+# aur uska public key (JWK set) kahan se milega taake woh JWT verify kar sake.
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
+
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"
 
@@ -99,16 +104,20 @@ server.port: 8080
 app.eureka-server: eureka
 
 # The below hardcoded hosts are no longer needed as we are using eureka to get details.
+#app:
+#  product-service:
+#    host: product
+#    port: 8080
+#  recommendation-service:
+#    host: recommendation
+#    port: 8080
+#  review-service:
+#    host: review
+#    port: 8080
+
 app:
-  product-service:
-    host: product
-    port: 8080
-  recommendation-service:
-    host: recommendation
-    port: 8080
-  review-service:
-    host: review
-    port: 8080
+  eureka-server: eureka
+  auth-server: auth-server
 
 spring.rabbitmq.host: rabbitmq
 
