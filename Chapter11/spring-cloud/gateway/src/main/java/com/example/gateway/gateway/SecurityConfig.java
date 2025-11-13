@@ -1,7 +1,9 @@
 package com.example.gateway.gateway;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -28,6 +30,14 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class SecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class);
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
+
+    @PostConstruct
+    public void logIssuerUri() {
+        System.out.println(">>> JWT issuer-uri resolved to: " + issuerUri);
+    }
 
     /**
      * We are permitting the routes related to the auth server means they won't require login.
@@ -68,8 +78,8 @@ public class SecurityConfig {
                 // hoti hai (e.g., application.yml me).
                 // .oauth2ResourceServer().jwt() specifies that authorization will be based on OAuth
                 //  2.0 access tokens encoded as JWTs.
-                .oauth2ResourceServer((ServerHttpSecurity.OAuth2ResourceServerSpec oauth) -> {
-                    oauth.jwt(jwt -> {
+                .oauth2ResourceServer((ServerHttpSecurity.OAuth2ResourceServerSpec auth2ResourceServerSpec) -> {
+                    auth2ResourceServerSpec.jwt(jwt -> {
                     });
                 });
 

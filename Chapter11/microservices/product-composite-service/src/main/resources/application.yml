@@ -101,8 +101,6 @@ spring.config.activate.on-profile: docker
 
 server.port: 8080
 
-app.eureka-server: eureka
-
 # The below hardcoded hosts are no longer needed as we are using eureka to get details.
 #app:
 #  product-service:

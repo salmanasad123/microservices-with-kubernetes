@@ -81,9 +81,9 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     // and the configuration values that we have set up in the property file.
     private final ObjectMapper mapper;
 
-    private final String productServiceUrl;
-    private final String recommendationServiceUrl;
-    private final String reviewServiceUrl;
+//    private  String productServiceUrl;
+//    private  String recommendationServiceUrl;
+//    private  String reviewServiceUrl;
 
     private final StreamBridge streamBridge;
 
@@ -109,12 +109,12 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     // it can be done using the builder.
     @Autowired
     public ProductCompositeIntegration(RestTemplate restTemplate, ObjectMapper mapper,
-                                       @Value("${app.product-service.host}") String productServiceHost,
-                                       @Value("${app.product-service.port}") int productServicePort,
-                                       @Value("${app.recommendation-service.host}") String recommendationServiceHost,
-                                       @Value("${app.recommendation-service.port}") int recommendationServicePort,
-                                       @Value("${app.review-service.host}") String reviewServiceHost,
-                                       @Value("${app.review-service.port}") int reviewServicePort,
+//                                       @Value("${app.product-service.host}") String productServiceHost,
+//                                       @Value("${app.product-service.port}") int productServicePort,
+//                                       @Value("${app.recommendation-service.host}") String recommendationServiceHost,
+//                                       @Value("${app.recommendation-service.port}") int recommendationServicePort,
+//                                       @Value("${app.review-service.host}") String reviewServiceHost,
+//                                       @Value("${app.review-service.port}") int reviewServicePort,
                                        WebClient.Builder webClient, StreamBridge streamBridge,
                                        @Qualifier("publishEventScheduler") Scheduler publishEventScheduler) {
 
@@ -123,9 +123,9 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
         this.webClient = webClient.build();
         this.streamBridge = streamBridge;
         this.publishEventScheduler = publishEventScheduler;
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product";
-        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation";
-        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review";
+//        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product";
+//        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation";
+//        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review";
     }
 
 
@@ -133,7 +133,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     public Mono<Product> getProduct(int productId) {
 
         try {
-            String url = productServiceUrl + "/" + productId;
+            String url = PRODUCT_SERVICE_URL + "/product/" + productId;
             LOG.debug("Will call getProduct API on URL: {}", url);
 
             // We are using restTemplate to make the actual api calls to other core services.
@@ -208,7 +208,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     public Flux<Recommendation> getRecommendations(int productId) {
         try {
             // construct the url, and make the api call through restTemplate
-            String url = recommendationServiceUrl + "?productId=" + productId;
+            String url = RECOMMENDATION_SERVICE_URL + "/recommendation?productId=" + productId;
 
             LOG.debug("Will call getRecommendations API on URL: {}", url);
             Flux<Recommendation> recommendationFlux = webClient.get().uri(url).retrieve()
@@ -247,7 +247,7 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
     public Flux<Review> getReviews(int productId) {
 
         try {
-            String url = reviewServiceUrl + "?productId=" + productId;
+            String url = REVIEW_SERVICE_URL + "/review?productId=" + productId;
 
             LOG.debug("Will call getReviews API on URL: {}", url);
 

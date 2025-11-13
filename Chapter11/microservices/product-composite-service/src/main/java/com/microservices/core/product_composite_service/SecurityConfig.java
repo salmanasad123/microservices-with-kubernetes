@@ -1,9 +1,13 @@
 package com.microservices.core.product_composite_service;
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import static org.springframework.http.HttpMethod.*;
@@ -26,6 +30,14 @@ import static org.springframework.http.HttpMethod.*;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
+
+    @PostConstruct
+    public void logIssuerUri() {
+        System.out.println(">>> JWT issuer-uri resolved to: " + issuerUri);
+    }
+
     /**
      * Yahan tu OAuth2 scopes ke basis pe authorization kar raha hai:
      * Agar koi GET kare → uske token me "SCOPE_product:read" hona chahiye.
@@ -36,6 +48,9 @@ public class SecurityConfig {
     @Bean
     SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
+                .csrf((ServerHttpSecurity.CsrfSpec csrf) -> {
+                    csrf.disable();
+                })
                 .authorizeExchange((ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec) -> {
                     authorizeExchangeSpec.pathMatchers("/openapi/**").permitAll();
                     authorizeExchangeSpec.pathMatchers("/webjars/**").permitAll();
@@ -58,5 +73,11 @@ public class SecurityConfig {
                 });
 
         return http.build();
+    }
+
+    @Bean
+    public ReactiveJwtDecoder reactiveJwtDecoder(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri) {
+        // Use JWKS URI directly
+        return NimbusReactiveJwtDecoder.withJwkSetUri(issuerUri + "/oauth2/jwks").build();
     }
 }

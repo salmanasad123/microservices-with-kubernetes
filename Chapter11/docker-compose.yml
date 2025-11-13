@@ -61,6 +61,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      auth-server:
+        condition: service_healthy
 
   mongodb:
     image: mongo:6.0.4
@@ -163,6 +165,9 @@ services:
     mem_limit: 512m
     ports:
       - "8443:8443"
+    depends_on:
+      auth-server:
+        condition: service_healthy
 
   auth-server:
     environment:

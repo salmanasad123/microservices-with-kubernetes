@@ -29,8 +29,8 @@ public class SecurityConfig {
 
     // The username and password are injected into the constructor from the configuration file.
     @Autowired
-    public SecurityConfig(@Value("${app.eureka.username}") String username,
-                          @Value("${app.eureka.password}") String password) {
+    public SecurityConfig(@Value("${app.eureka-username}") String username,
+                          @Value("${app.eureka-password}") String password) {
         this.username = username;
         this.password = password;
     }
