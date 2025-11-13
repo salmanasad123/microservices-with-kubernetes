@@ -87,6 +87,8 @@ management.endpoints.web.exposure.include: "*"
 # To handle the different configurations that are required when running locally without Docker and
 # when running the microservices as Docker containers, we will use Spring profiles. Now, we will create a new
 # Spring profile named docker to be used when we run our microservices as containers in Docker.
+# yaha per baki sari configuration default profile wali ajae gi except jo neechay define ho rhaa ha wo bas override
+# hoga default profile ke upar.
 
 spring.config.activate.on-profile: docker
 

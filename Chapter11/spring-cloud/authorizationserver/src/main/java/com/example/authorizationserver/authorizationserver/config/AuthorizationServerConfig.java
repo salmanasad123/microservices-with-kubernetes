@@ -249,6 +249,7 @@ public class AuthorizationServerConfig {
      *
      * .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
      * Ye setting user se explicit consent mangti hai jab client unke data ko access kare.
+     * Ye content jaise hum goolge mae detay hain ke "allow access".
      */
     @Bean
     public RegisteredClientRepository registeredClientRepository() {

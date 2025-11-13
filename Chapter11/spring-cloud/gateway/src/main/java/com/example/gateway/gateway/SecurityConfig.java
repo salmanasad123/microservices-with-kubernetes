@@ -29,6 +29,21 @@ public class SecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class);
 
+    /**
+     * We are permitting the routes related to the auth server means they won't require login.
+     * Routes to the authorization server for the URIs starting with /oauth, /login, and /error have
+     * been added in the configuration file, application.yml. These URIs are used to issue tokens
+     * for clients, authenticate users, and show error messages.
+     *  • Since these three URIs need to be unprotected by the edge server, they are configured in the
+     * new class SecurityConfig to permit all requests.
+     *
+     * matlab har request jo gateway se pass hoti hai uske paas valid JWT token hona chahiye.
+     * oauth2ResourceServer().jwt()
+     * Ye gateway ko OAuth2 Resource Server banata hai.
+     * Aur .jwt() indicate karta hai ki JWT tokens ko validate kare.
+     * Iska matlab ye hua ki: gateway har incoming request me Authorization header me JWT check karega,
+     * aur agar token valid nahi hai to 401 Unauthorized return karega.
+     */
     @Bean
     SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) throws Exception {
         http

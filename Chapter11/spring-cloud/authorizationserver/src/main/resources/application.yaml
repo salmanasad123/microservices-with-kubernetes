@@ -29,7 +29,8 @@ logging:
     root: INFO
 
 
-
+# yaha per baki sari configuration default profile wali ajae gi except jo neechay define ho rhaa ha wo bas override
+# hoga
 ---
 spring.config.activate.on-profile: docker
 

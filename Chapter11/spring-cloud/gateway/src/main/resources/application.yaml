@@ -91,6 +91,10 @@ spring.cloud.gateway.routes:
     predicates:
       - Path=/eureka/**
 
+  # Routes related to the authorization server, these routes are exposed by auth server by default.
+  # Routes to the authorization server for the URIs starting with /oauth, /login, and /error have
+  # been added in the configuration file, application.yml. These URIs are used to issue tokens
+  # for clients, authenticate users, and show error messages.
   - id: oauth2-server
     uri: lb://auth-server
     predicates:
@@ -136,8 +140,8 @@ spring.cloud.gateway.routes:
       - SetPath=/501
 
 # spring.security.oauth2.resourceserver.jwt.issuer-uri ka kaam ye hota hai ke resource server
-# (yani yahan product-composite) ko batana “kis authorization server ne token issue kiya tha” —
-# aur uska public key (JWK set) kahan se milega taake woh JWT verify kar sake.
+# (yani yahan gateway) ko batana “kis authorization server ne token issue kiya tha” —
+# aur uska public key (JWK set - Json Web Keyset) kahan se milega taake woh JWT verify kar sake.
 spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
 
 management.endpoint.gateway.enabled: true

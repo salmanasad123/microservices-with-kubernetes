@@ -23,7 +23,12 @@ public class DefaultSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultSecurityConfig.class);
 
-    // formatter:off
+
+    /**
+     * Setting a security config that will make sure all the requests to this authorization server
+     * except the actuator ones will be authenticated, means any end-points exposed by authorization server
+     * will require authentication.
+     */
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((AuthorizeHttpRequestsConfigurer<HttpSecurity>.

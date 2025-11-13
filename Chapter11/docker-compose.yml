@@ -129,6 +129,29 @@ services:
 # for the new certificate, and a volume that maps to the folder where the new certificate is placed.
 # file:/keystore/edge-test.p12 ka matlab hai certificate container ke /keystore folder me hai.
 # # To indicate that the edge server talks HTTPS and not HTTP, we also change the port from 8080 to 8443 in the server.port parameter
+# Tumhara setup:
+  #edge.p12 certificate chapter12/keystore/ ke andar hai.
+  #Tumhara docker-compose.yml bhi chapter12 ke root me hi pada hua hai.
+  #Docker service ka volume mapping kuch aisa hai:
+  #volumes:
+  #  - $PWD/keystore:/keystore
+  #Aur container ke andar environment variable me ye diya gaya hai:
+  #SERVER_SSL_KEY_STORE=file:/keystore/edge-test.p12
+  # Ab samjho kya hoga:
+  #$PWD ka matlab hai:
+  #Current working directory (jahan se tum docker compose up command chalate ho).
+  #Agar tum command chalate ho:
+  #docker compose up
+  #aur tum us time chapter12 folder ke andar ho,
+  #to $PWD = /path/to/chapter12
+  #Docker volume line:
+  #- $PWD/keystore:/keystore
+  #ka matlab hai:
+  #Host ke chapter12/keystore folder ko container ke /keystore path par mount kar do.
+  #Iska result:
+  #Container ke andar /keystore me tumhara edge.p12 file available hoga.
+  #Aur tumhara application us path se read karega:
+  #file:/keystore/edge-test.p12
   gateway:
     environment:
       - SPRING_PROFILES_ACTIVE=docker

@@ -55,7 +55,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // This security config is registered with Spring Security.
+    // This security config is registered with Spring Security. Http basic means requires a username and
+    // password.
     @Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http

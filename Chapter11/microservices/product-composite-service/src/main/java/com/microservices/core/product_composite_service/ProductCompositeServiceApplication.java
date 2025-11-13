@@ -17,7 +17,9 @@ import reactor.core.scheduler.Schedulers;
 /**
  * The product-composite service contains an Integration layer used to handle the communication
  * with the three core microservices. The core microservices will all have a Persistence layer used for
- * communicating with their databases
+ * communicating with their databases.
+ *
+ * This Server will be a ResourceServer.
  */
 @SpringBootApplication
 @ComponentScan(basePackages = {"com.example", "com.microservices"})
