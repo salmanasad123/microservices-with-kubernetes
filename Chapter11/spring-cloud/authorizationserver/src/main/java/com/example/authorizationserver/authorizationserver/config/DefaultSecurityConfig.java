@@ -2,6 +2,7 @@ package com.example.authorizationserver.authorizationserver.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,6 +24,8 @@ public class DefaultSecurityConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultSecurityConfig.class);
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Setting a security config that will make sure all the requests to this authorization server
@@ -48,16 +51,12 @@ public class DefaultSecurityConfig {
     public UserDetailsService userDetailsService() {
         UserDetails userDetails = User.builder()
                 .username("u")
-                .password(passwordEncoder().encode("p"))
+                .password(passwordEncoder.encode("p"))
                 .roles("USER")
                 .build();
 
         return new InMemoryUserDetailsManager(userDetails);
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
     // @formatter:on
 }

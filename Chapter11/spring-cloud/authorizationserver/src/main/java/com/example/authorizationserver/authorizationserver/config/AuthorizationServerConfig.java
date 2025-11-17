@@ -8,6 +8,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -18,6 +19,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -176,6 +179,9 @@ public class AuthorizationServerConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     /**
      * Ye method ek Spring Security Filter Chain bana raha hai specifically Authorization Server ke
      * endpoints ke liye (jaise /oauth2/authorize, /oauth2/token, /oauth2/jwks, /userinfo, etc.)
@@ -188,11 +194,11 @@ public class AuthorizationServerConfig {
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
 
         // Replaced this call with the implementation of applyDefaultSecurity() to be able to add a custom redirect_uri validator
-        // OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         // create authorization server configurer.
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer();
+                http.getConfigurer(OAuth2AuthorizationServerConfigurer.class);
 
         // Register a custom redirect_uri validator, that allows redirect uris based on https://localhost during development.
         // Ye line ek custom validator register kar rahi hai jo redirect_uri validate karega jab client authorization request bhejta hai.
@@ -206,9 +212,6 @@ public class AuthorizationServerConfig {
         RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
 
         http.securityMatcher(endpointsMatcher)
-                .authorizeHttpRequests((AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry authorize) -> {
-                    authorize.anyRequest().authenticated();
-                })
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
                 .apply(authorizationServerConfigurer);
 
@@ -255,7 +258,7 @@ public class AuthorizationServerConfig {
     public RegisteredClientRepository registeredClientRepository() {
         RegisteredClient writerClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("writer")
-                .clientSecret("{noop}secret-writer")
+                .clientSecret(passwordEncoder.encode("secret-writer"))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -275,7 +278,7 @@ public class AuthorizationServerConfig {
 
         RegisteredClient readerClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("reader")
-                .clientSecret("{noop}secret-reader")
+                .clientSecret(passwordEncoder.encode("secret-reader"))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

@@ -1,7 +1,13 @@
 package com.example.authorizationserver.authorizationserver;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 /**
  * The Spring Authorization Server supports both the use of the OpenID Connect discovery endpoint
@@ -97,6 +103,19 @@ public class AuthorizationserverApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(AuthorizationserverApplication.class, args);
+	}
+
+	@Bean
+	public CommandLineRunner showClients(RegisteredClientRepository repo) {
+		return args -> {
+			RegisteredClient writer = repo.findByClientId("writer");
+			System.out.println("Writer client registered: " + writer);
+		};
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 
 }
