@@ -20,8 +20,13 @@ services:
   product:
     build: microservices/product-service
     mem_limit: 512m
+    # Add credentials for accessing the config server to the Docker Compose files, environment means thesse variables
+    # will be fetched from env file under project root.
+    # SPRING_PROFILES_ACTIVE=docker --> Ye hard-coded value hai → direct Docker container ke andar env variable ban jayega.
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -31,8 +36,13 @@ services:
   recommendation:
     build: microservices/recommendation-service
     mem_limit: 512m
+    # Add credentials for accessing the config server to the Docker Compose files, environment means thesse variables
+    # will be fetched from env file under project root.
+    # SPRING_PROFILES_ACTIVE=docker --> Ye hard-coded value hai → direct Docker container ke andar env variable ban jayega.
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -42,8 +52,12 @@ services:
   review:
     build: microservices/review-service
     mem_limit: 512m
+    # Add credentials for accessing the config server to the Docker Compose files, environment means thesse variables
+    # will be fetched from env file under project root
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     depends_on:
       mysql:
         condition: service_healthy
@@ -58,6 +72,8 @@ services:
     #  - "8081:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -110,6 +126,10 @@ services:
   eureka:
     build: spring-cloud/eureka
     mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     # We no longer need the ports as everything will be exposed through the gateway, so we are not exposing eureka to the outside world.
     #ports:
     #  - "8761:8761"
@@ -159,6 +179,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_SSL_KEY_STORE=file:/keystore/edge-test.p12
       - SERVER_SSL_KEY_STORE_PASSWORD=testtest
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     volumes:
       - $PWD/keystore:/keystore
     build: spring-cloud/gateway
@@ -172,6 +194,8 @@ services:
   auth-server:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
     build: spring-cloud/authorizationserver
     mem_limit: 512m
     healthcheck:

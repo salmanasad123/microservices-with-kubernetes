@@ -1,43 +1,32 @@
-server:
-    port: 8761
+# Move the configuration file, application.yml, to the config repository and rename it with the name of the
+# client as specified by the property spring.application.name.
+# Add a new application.yml file to the src/main/resources folder. This file will be used to hold
+# the configuration required to connect to the config server.
 
-spring.application.name: eureka-server
+# This will make the application to fetch configuration from the config-server.
+#   username: ${CONFIG_SERVER_USR} --> specified in the env file
+#   password: ${CONFIG_SERVER_PWD} --> specified in the env file
 
-# Credentials for the user are set up in the configuration file
-app:
-    eureka-username: u
-    eureka-password: p
+# As mentioned previously, the src/main/resources/application.yml file now holds the client configuration that
+# is required to connect to the config server. This file has the same content for all clients
+# of the config server, except for the application name, as specified by the spring.application.name property
 
-# Parameters for the Eureka server, prefixed with eureka.server.
-# Parameters for Eureka clients, prefixed with eureka.client. This is for clients who want to
-# communicate with a Eureka server.
-# Parameters for Eureka instances, prefixed with eureka.instance. This is for the microservice
-# instances that want to register themselves in the Eureka server.
-# The first part of the configuration, for a Eureka instance and client, is a standard configuration
-# for a standalone Eureka server.
-# The last two parameters used for the Eureka server, waitTimeInMsWhenSyncEmpty and
-# response-cache-update-interval-ms, are used to minimize the startup time.
-eureka:
-    instance:
-        hostname: localhost
-    client:
-        registerWithEureka: false
-        fetchRegistry: false
-        serviceUrl:
-            defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
-    server:
-        waitTimeInMsWhenSyncEmpty: 0
-        response-cache-update-interval-ms: 5000
+spring.config.import: "configserver:"
 
-management.endpoints.web.exposure.include: "*"
+spring:
+    application.name: eureka-server
+    cloud.config:
+        failFast: true
+        retry:
+            initialInterval: 3000
+            multiplier: 1.3
+            maxInterval: 10000
+            maxAttempts: 20
+        uri: http://localhost:8888
+        username: ${CONFIG_SERVER_USR}
+        password: ${CONFIG_SERVER_PWD}
 
 ---
-
 spring.config.activate.on-profile: docker
 
-server.port: 8761
-
-
-
-
-
+spring.cloud.config.uri: http://config-server:8888

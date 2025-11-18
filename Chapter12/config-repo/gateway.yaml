@@ -5,7 +5,8 @@ server.port: 8443
 # It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
 # microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
 # calls to the microservice.
-spring.application.name: gateway
+# The application name property has been moved to the application.yml inside the spring-cloud/gateway.yml
+# spring.application.name: gateway
 
 # To prevent eavesdropping on external communication, for example, from the internet, via the public APIs exposed
 # by the edge server. We will use HTTPS to encrypt communication. To use HTTPS, we need to do the following:

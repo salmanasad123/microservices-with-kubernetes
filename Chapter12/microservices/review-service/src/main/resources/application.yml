@@ -7,6 +7,10 @@
 #   username: ${CONFIG_SERVER_USR} --> specified in the env file
 #   password: ${CONFIG_SERVER_PWD} --> specified in the env file
 
+# As mentioned previously, the src/main/resources/application.yml file now holds the client configuration that
+# is required to connect to the config server. This file has the same content for all clients
+# of the config server, except for the application name, as specified by the spring.application.name property
+
 spring.config.import: "configserver:"
 
 spring:

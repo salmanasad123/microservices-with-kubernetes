@@ -2,7 +2,9 @@
 server.port: 9999
 server.forward-headers-strategy: framework
 
-spring.application.name: auth-server
+#The application name property has been moved to the application.yml inside the
+# spring-cloud/authorizationserver.yml
+#spring.application.name: auth-server
 
 app:
   eureka-username: u

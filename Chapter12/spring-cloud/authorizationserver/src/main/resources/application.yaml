@@ -1,37 +1,32 @@
-# Authorization server will run on port 9999
-server.port: 9999
-server.forward-headers-strategy: framework
+# Move the configuration file, application.yml, to the config repository and rename it with the name of the
+# client as specified by the property spring.application.name.
+# Add a new application.yml file to the src/main/resources folder. This file will be used to hold
+# the configuration required to connect to the config server.
 
-spring.application.name: auth-server
+# This will make the application to fetch configuration from the config-server.
+#   username: ${CONFIG_SERVER_USR} --> specified in the env file
+#   password: ${CONFIG_SERVER_PWD} --> specified in the env file
 
-app:
-  eureka-username: u
-  eureka-password: p
-  eureka-server: localhost
+# As mentioned previously, the src/main/resources/application.yml file now holds the client configuration that
+# is required to connect to the config server. This file has the same content for all clients
+# of the config server, except for the application name, as specified by the spring.application.name property
 
-# The authorization server has been integrated with Eureka for service discovery in the same way as the other projects.
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
-    initialInstanceInfoReplicationIntervalSeconds: 5
-    registryFetchIntervalSeconds: 5
-  instance:
-    leaseRenewalIntervalInSeconds: 5
-    leaseExpirationDurationInSeconds: 5
+spring.config.import: "configserver:"
 
-# public access for actuator endpoints
-management.endpoint.health.show-details: "ALWAYS"
-management.endpoints.web.exposure.include: "*"
+spring:
+  application.name: auth-server
+  cloud.config:
+    failFast: true
+    retry:
+      initialInterval: 3000
+      multiplier: 1.3
+      maxInterval: 10000
+      maxAttempts: 20
+    uri: http://localhost:8888
+    username: ${CONFIG_SERVER_USR}
+    password: ${CONFIG_SERVER_PWD}
 
-logging:
-  level:
-    root: INFO
-
-
-# yaha per baki sari configuration default profile wali ajae gi except jo neechay define ho rhaa ha wo bas override
-# hoga
 ---
 spring.config.activate.on-profile: docker
 
-app.eureka-server: eureka
+spring.cloud.config.uri: http://config-server:8888

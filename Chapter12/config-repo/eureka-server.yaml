@@ -1,7 +1,9 @@
 server:
     port: 8761
 
-spring.application.name: eureka-server
+# The application name property has been moved to the application.yml inside the
+# spring-cloud/eureka-server.yml
+# spring.application.name: eureka-server
 
 # Credentials for the user are set up in the configuration file
 app:
