@@ -31,7 +31,7 @@ app:
   eureka-server: localhost
   auth-server: localhost
 
-spring.cloud.config.uri: http://config-server:8888
+spring.cloud.config.uri: http://localhost:8888
 
 # Since Spring Cloud Gateway will use Netflix Eureka to find the microservices it will route traffic to,
 # it must be configured as a Eureka client.
@@ -179,3 +179,5 @@ spring.config.activate.on-profile: docker
 app:
   eureka-server: eureka
   auth-server: auth-server
+
+spring.cloud.config.uri: http://config-server:8888
