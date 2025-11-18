@@ -1,0 +1,201 @@
+# For each microservice, we specify the following:
+# • The name of the microservice. This will also be the hostname of the container in the internal Docker network.
+# • A build directive that specifies where to find the Dockerfile that was used to build the Docker image.
+# A memory limit of 512 MB. 512 MB should be sufficient for all our microservices
+# The environment variables that will be set up for the container. In our case, we used these to
+# specify which Spring profile to use.
+
+# For the product-composite service, we will also specify port mappings – we will expose its port so it
+# can be reached from outside Docker. The other microservices will not be accessible from the outside.
+
+# To avoid microservices trying to connect to databases before they are up and running, the product
+# and recommendation services are declared as dependent on the MongoDB database. In depends on, mongodb is the
+# name of the service [mongodb].
+# This means that Docker Compose will not start up the microservice containers until the database
+# containers are launched and reported as healthy by their health checks.
+
+version: '2.1'
+
+services:
+  product:
+    build: microservices/product-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  recommendation:
+    build: microservices/recommendation-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  review:
+    build: microservices/review-service
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # We no longer need the ports as everything will be exposed through the gateway, so we are not exposing eureka to the outside world.
+  product-composite:
+    build: microservices/product-composite-service
+    mem_limit: 512m
+    #ports:
+    #  - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth-server:
+        condition: service_healthy
+
+  mongodb:
+    image: mongo:6.0.4
+    mem_limit: 512m
+    ports:
+      - "27017:27017"
+    command: mongod
+    healthcheck:
+      test: "mongostat -n 1"
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  # MySQL, we also declare some environment variables, The root password, The name of the database that will be
+  # created on container startup, a username and password for a user that is set up for the database on container startup.
+  # We also declare a health check that Docker will run to determine the status of the MongoDB and MySQL databases.
+  mysql:
+    image: mysql:8.0.32
+    mem_limit: 512m
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpwd
+      - MYSQL_DATABASE=review-db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pwd
+    healthcheck:
+      test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  rabbitmq:
+    image: rabbitmq:3.11.8-management
+    mem_limit: 512m
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  eureka:
+    build: spring-cloud/eureka
+    mem_limit: 512m
+    # We no longer need the ports as everything will be exposed through the gateway, so we are not exposing eureka to the outside world.
+    #ports:
+    #  - "8761:8761"
+
+# Agar hum development (dev) ke liye apni application banayein, toh .jar file ke andar self-signed certificate rakhna chal jaata hai.
+# Problem: Ye production ya test environments me secure nahi hai, kyunki self-signed certificate
+# trusted CA (Certificate Authority) se sign nahi hota. Browsers aur clients isse trust nahi karte.
+
+# Important point: .jar ko har baar rebuild nahi karna chahiye agar certificate change ho.
+# Matlab, aapko runtime pe certificate specify karne ka tareeqa chahiye.
+# Jab aap application ko Docker me run karte ho:
+  # Docker image me .jar already hoga.
+  # Certificate ko Docker image ke andar bake nahi karna chahiye (waise hi .jar me nahi karna chahiye).
+  # Iske bajaye Docker volume map karo:
+  # Host machine pe certificate rakhte ho.
+  # Docker container me volume map karke certificate container ke andar available kara dete ho.
+
+# Update the Docker Compose file, docker-compose.yml, with environment variables for the location, the password
+# for the new certificate, and a volume that maps to the folder where the new certificate is placed.
+# file:/keystore/edge-test.p12 ka matlab hai certificate container ke /keystore folder me hai.
+# # To indicate that the edge server talks HTTPS and not HTTP, we also change the port from 8080 to 8443 in the server.port parameter
+# Tumhara setup:
+  #edge.p12 certificate chapter12/keystore/ ke andar hai.
+  #Tumhara docker-compose.yml bhi chapter12 ke root me hi pada hua hai.
+  #Docker service ka volume mapping kuch aisa hai:
+  #volumes:
+  #  - $PWD/keystore:/keystore
+  #Aur container ke andar environment variable me ye diya gaya hai:
+  #SERVER_SSL_KEY_STORE=file:/keystore/edge-test.p12
+  # Ab samjho kya hoga:
+  #$PWD ka matlab hai:
+  #Current working directory (jahan se tum docker compose up command chalate ho).
+  #Agar tum command chalate ho:
+  #docker compose up
+  #aur tum us time chapter12 folder ke andar ho,
+  #to $PWD = /path/to/chapter12
+  #Docker volume line:
+  #- $PWD/keystore:/keystore
+  #ka matlab hai:
+  #Host ke chapter12/keystore folder ko container ke /keystore path par mount kar do.
+  #Iska result:
+  #Container ke andar /keystore me tumhara edge.p12 file available hoga.
+  #Aur tumhara application us path se read karega:
+  #file:/keystore/edge-test.p12
+  gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_SSL_KEY_STORE=file:/keystore/edge-test.p12
+      - SERVER_SSL_KEY_STORE_PASSWORD=testtest
+    volumes:
+      - $PWD/keystore:/keystore
+    build: spring-cloud/gateway
+    mem_limit: 512m
+    ports:
+      - "8443:8443"
+    depends_on:
+      auth-server:
+        condition: service_healthy
+
+  auth-server:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    build: spring-cloud/authorizationserver
+    mem_limit: 512m
+    healthcheck:
+      test: [ "CMD", "curl", "-fs", "http://localhost:9999/actuator/health" ]
+      interval: 5s
+      timeout: 2s
+      retries: 60
+
+  # The Spring profile, native, is added to signal to the config server that the config repository is based on
+  # local files.
+  # The environment variable ENCRYPT_KEY is used to specify the symmetric encryption key that will be used by
+  # the config server to encrypt and decrypt sensitive configuration information.
+  # The environment variables SPRING_SECURITY_USER_NAME and SPRING_SECURITY_USER_PASSWORD
+  # are used to specify the credentials to be used for protecting the APIs using basic HTTP authentication.
+  # The volumes declaration will make the config-repo folder accessible in the Docker container at /config-repo.
+  # The values of the three preceding environment variables, marked in the Docker Compose file with
+  # ${...}, are fetched by Docker Compose from the .env file
+  config-server:
+    build: spring-cloud/configserver
+    mem_limit: 512m
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,native
+      - ENCRYPT_KEY=${CONFIG_SERVER_ENCRYPT_KEY}
+      - SPRING_SECURITY_USER_NAME=${CONFIG_SERVER_USR}
+      - SPRING_SECURITY_USER_PASSWORD=${CONFIG_SERVER_PWD}
+    volumes:
+      - $PWD/config-repo:/config-repo

@@ -1,0 +1,150 @@
+server.port: 7000
+server.error.include-message: always
+
+spring.autoconfigure.exclude:
+  - org.springframework.boot.autoconfigure.security.servlet.OAuth2ResourceServerJwtConfiguration
+
+# It is used to give each microservice a virtual hostname, a name used by the Eureka service to identify each
+# microservice. Eureka clients will use this virtual hostname in the URLs that are used to make HTTP
+# calls to the microservice. The application name property has been moved to the application.yml inside the
+# microservices/product-composite.yml
+# spring.application.name: product-composite
+
+# For Eureka clients, the credentials can be specified in the connection URL for the Eureka server. This
+# is specified in each client’s configuration file, application.ym
+app:
+  eureka-username: u
+  eureka-password: p
+  eureka-server: localhost
+  auth-server: localhost
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+# To avoid hardcoding the address information for the core services into the source code of the composite
+# microservice, the composite service uses a property file where information on how to find the core services is stored.
+
+# We can now get rid of our hardcoded configuration of available microservices in application.
+# yml. It looks like this because we are using eureka to find the instances of microservices.
+#app:
+#  product-service:
+#    host: localhost
+#    port: 7001
+#  recommendation-service:
+#    host: localhost
+#    port: 7002
+#  review-service:
+#    host: localhost
+#    port: 7003
+
+# We also need to set up the configuration for the messaging system, to be able to publish events; this
+# is similar to what we did for the consumers. Declaring RabbitMQ as the default messaging system,
+# JSON as the default content type, and Kafka and RabbitMQ for connectivity information is the same
+# as for the consumers.
+# Spring Cloud Stream ek abstraction deta hai taake tu code mein kafka/rabbitmq specific code na likhe.
+# Tu sirf “message channel” define karta hai (like products-out-0),
+# aur config ke zariye decide karta hai ke wo channel RabbitMQ ya Kafka ke kis topic/queue se bind hoga.
+spring.cloud.stream:
+  defaultBinder: rabbit
+  default.contentType: application/json
+  bindings:
+    products-out-0:
+      destination: products
+      producer:
+        required-groups: auditGroup
+    recommendations-out-0:
+      destination: recommendations
+      producer:
+        required-groups: auditGroup
+    reviews-out-0:
+      destination: reviews
+      producer:
+        required-groups: auditGroup
+
+spring.cloud.stream.kafka.binder:
+  brokers: 127.0.0.1
+  defaultBrokerPort: 9092
+
+spring.rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  username: guest
+  password: guest
+
+logging:
+  level:
+    root: INFO
+    com.example: DEBUG
+
+# spring.security.oauth2.resourceserver.jwt.issuer-uri ka kaam ye hota hai ke resource server
+# (yani yahan product-composite) ko batana “kis authorization server ne token issue kiya tha” —
+# aur uska public key (JWK set) kahan se milega taake woh JWT verify kar sake.
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
+
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
+
+#  For the product-composite-service, things are a bit more complicated since it needs to know where
+# to find the core services. When we ran all the services on localhost, it was configured to use localhost
+# and individual port numbers, 7001-7003, for each core service. When running in Docker, each service
+# will have its own hostname but will be accessible on the same port number, 8080. Here, the docker
+# profile for product-composite-service looks as follows
+
+# Where did the hostnames product, recommendation, and review come from?
+# These are specified in the docker-compose.yml file
+
+---
+spring.config.activate.on-profile: docker
+
+server.port: 8080
+
+app:
+  eureka-server: eureka
+  auth-server: auth-server
+
+# The below hardcoded hosts are no longer needed as we are using eureka to get details.
+#app:
+#  product-service:
+#    host: product
+#    port: 8080
+#  recommendation-service:
+#    host: recommendation
+#    port: 8080
+#  review-service:
+#    host: review
+#    port: 8080
+
+
+spring.rabbitmq.host: rabbitmq
+
+spring.cloud.stream.kafka.binder.brokers: kafka
+
+---
+spring.config.activate.on-profile: streaming_partitioned
+
+spring.cloud.stream.bindings.products-out-0.producer:
+  partition-key-expression: headers['partitionKey']
+  partition-count: 2
+
+spring.cloud.stream.bindings.recommendations-out-0.producer:
+  partition-key-expression: headers['partitionKey']
+  partition-count: 2
+
+spring.cloud.stream.bindings.reviews-out-0.producer:
+  partition-key-expression: headers['partitionKey']
+  partition-count: 2
+
+---
+spring.config.activate.on-profile: kafka
+
+management.health.rabbit.enabled: false
+spring.cloud.stream.defaultBinder: kafka
+spring.kafka.bootstrap-servers: kafka:9092
+spring.cloud.stream.kafka.binder.replication-factor: 1

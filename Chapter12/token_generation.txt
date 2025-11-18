@@ -1,0 +1,18 @@
+# Certificate generation for https:
+keytool -genkeypair -alias localhost -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore edge.p12 -validity 3650
+
+keytool -genkeypair -alias localhost -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore/edge-test.p12 -validity 3650
+
+
+# Obtain token from OAuth server using clientID and clientSecret.
+curl -k https://writer:secret-writer@localhost:8443/oauth2/token -d grant_type=client_credentials -d scope="product:read product:write" -s | jq .
+
+
+QDsVKzl62sUBg-1EwM7pLOcZp7GKEocPvJK-wDGHfvYzQXkR29QYczbhbE4WT8T_sE3jZCP33IcxXWshjOIoHiiINPtK8ht272sNcTr8U7k73-pqewVUla4iMsLNQAfF&state=35725
+
+
+curl -k https://reader:secret-reader@localhost:8443/oauth2/token \
+ -d grant_type=authorization_code \
+ -d client_id=reader \
+ -d redirect_uri=https://my.redirect.uri \
+ -d code=$CODE -s | jq .
