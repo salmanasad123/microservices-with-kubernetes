@@ -8,7 +8,7 @@ server.forward-headers-strategy: framework
 
 app:
   eureka-username: u
-  eureka-password: p
+  eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
   eureka-server: localhost
 
 # The authorization server has been integrated with Eureka for service discovery in the same way as the other projects.

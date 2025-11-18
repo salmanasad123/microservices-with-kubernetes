@@ -5,10 +5,11 @@ server:
 # spring-cloud/eureka-server.yml
 # spring.application.name: eureka-server
 
-# Credentials for the user are set up in the configuration file
+# Credentials for the user are set up in the configuration file, cipher means since the encryption is enabled on
+# cloud config server, it will store the password in encrypted format.
 app:
     eureka-username: u
-    eureka-password: p
+    eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
 
 # Parameters for the Eureka server, prefixed with eureka.server.
 # Parameters for Eureka clients, prefixed with eureka.client. This is for clients who want to

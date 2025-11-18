@@ -9,7 +9,7 @@ server.error.include-message: always
 
 app:
   eureka-username: u
-  eureka-password: p
+  eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
   eureka-server: localhost
 
 eureka:
@@ -72,7 +72,7 @@ spring.rabbitmq:
   host: 127.0.0.1
   port: 5672
   username: guest
-  password: guest
+  password: '{cipher}17fcf0ae5b8c5cf87de6875b699be4a1746dd493a99d926c7a26a68c422117ef'
 
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"

@@ -1,8 +1,16 @@
 server.port: 8888
 
+spring:
+  profiles:
+    active: native
+  security:
+    user:
+      name: dev-usr
+      password: dev-pwd
+
 # The most important configuration is to specify where to find the configuration repository, indicated using the
 # spring.cloud.config.server.native.searchLocations property.
-spring.cloud.config.server.native.searchLocations: file:${PWD}/config-repo
+spring.cloud.config.server.native.search-locations: file:///C:/Users/Salman%20Asad/Documents/Microservices-with-kubernetes/Chapter12/config-repo
 
 # WARNING: Exposing all management endpoints over http should only be used during development, must be locked down in production!
 management.endpoint.health.show-details: "ALWAYS"
@@ -12,6 +20,9 @@ logging:
   level:
     root: info
 
+encrypt:
+  key: my-very-secure-encrypt-key
+
 ---
 spring.config.activate.on-profile: docker
-spring.cloud.config.server.native.searchLocations: file:/config-repo
+spring.cloud.config.server.native.search-locations: file:/config-repo
