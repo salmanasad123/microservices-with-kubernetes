@@ -25,4 +25,7 @@ encrypt:
 
 ---
 spring.config.activate.on-profile: docker
-spring.cloud.config.server.native.search-locations: file:/config-repo
+# In springboot 3.4+ searchLocations works like this not with a hyphen search-locations
+spring.cloud.config.server.native.searchLocations: file:/config-repo
+
+
