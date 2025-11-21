@@ -1,0 +1,39 @@
+# Authorization server will run on port 9999
+server.port: 9999
+server.forward-headers-strategy: framework
+
+#The application name property has been moved to the application.yml inside the
+# spring-cloud/authorizationserver.yml
+#spring.application.name: auth-server
+
+app:
+  eureka-username: u
+  eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
+  eureka-server: localhost
+
+# The authorization server has been integrated with Eureka for service discovery in the same way as the other projects.
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+# public access for actuator endpoints
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
+
+logging:
+  level:
+    root: INFO
+
+
+# yaha per baki sari configuration default profile wali ajae gi except jo neechay define ho rhaa ha wo bas override
+# hoga
+---
+spring.config.activate.on-profile: docker
+
+app.eureka-server: eureka
