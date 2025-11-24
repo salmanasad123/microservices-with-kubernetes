@@ -129,13 +129,13 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
 //                                       @Value("${app.recommendation-service.port}") int recommendationServicePort,
 //                                       @Value("${app.review-service.host}") String reviewServiceHost,
 //                                       @Value("${app.review-service.port}") int reviewServicePort,
-                                       WebClient.Builder webClient, StreamBridge streamBridge,
+                                       WebClient webClient, StreamBridge streamBridge,
                                        @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
                                        ServiceUtil serviceUtil) {
 
         this.restTemplate = restTemplate;
         this.mapper = mapper;
-        this.webClient = webClient.build();
+        this.webClient = webClient;
         this.streamBridge = streamBridge;
         this.publishEventScheduler = publishEventScheduler;
         this.serviceUtil = serviceUtil;

@@ -241,6 +241,12 @@ services:
 
 # To run the Zipkin server as a Docker container, we will use a Docker image, openzipkin/zipkin,
 # published by the Zipkin project.
+# The memory limit for Zipkin is increased to 1,024 MB, compared to 512 MB for all other containers.
+# The reason for this is that since Zipkin is configured to keep all trace information in
+# memory, it will consume more memory than the other containers after a while.
+# • If Zipkin happens to run out of memory and stops, we have applied a restart policy that requests
+# the Docker engine to always restart the container. This will apply both if the container itself
+# crashes or if the Docker engine is restarted.
   zipkin-server:
     image: openzipkin/zipkin:2.24.0
     restart: always

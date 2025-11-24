@@ -7,10 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Hooks;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -37,7 +39,10 @@ public class ProductCompositeServiceApplication {
         this.taskQueueSize = taskQueueSize;
     }
 
+
+
     public static void main(String[] args) {
+        Hooks.enableAutomaticContextPropagation();
         SpringApplication.run(ProductCompositeServiceApplication.class, args);
     }
 
@@ -54,11 +59,28 @@ public class ProductCompositeServiceApplication {
      * composite microservice, we also need to do the following:
      * Add a Spring bean in the main application class, ProductCompositeServiceApplication, which
      * creates a load balancer-aware WebClient builder:
+     *
+     *
+     * However, for the product-composite service, one problem remains. To ensure that a WebClient
+     * instance is correctly instrumented for observation, for example, to be able to propagate the current
+     * trace and span IDs as headers in an outgoing request, the WebClient.Builder instance is expected to
+     * be injected using auto-wiring. Unfortunately, when using Eureka for service discovery, the WebClient.
+     *  Builder instance is recommended to be created as a bean annotated with @LoadBalanced as:
+     *
+     *  public WebClient.Builder loadBalancedWebClientBuilder() {
+     *  return WebClient.builder();
+     *   }
+     *  So, there is a conflict in how to create a WebClient instance when used with both Eureka and Microme
+     * ter Tracing. To resolve this conflict, the @LoadBalanced bean can be replaced by a load-balancer-aware
+     * exchange-filter function, ReactorLoadBalancerExchangeFilterFunction. An exchange-filter function
+     * can be set on an auto-wired WebClient.Builder instance like
      */
+
+    @Autowired
+    private ReactorLoadBalancerExchangeFilterFunction lbFunction;
     @Bean
-    @LoadBalanced
-    public WebClient.Builder loadBalancedWebClientBuilder() {
-        return WebClient.builder();
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.filter(lbFunction).build();
     }
     @Bean
     public Scheduler publishEventScheduler() {

@@ -138,6 +138,12 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-zipkin</artifactId>
         </dependency>
+        <!-- To get access to the ReactorLoadBalancerExchangeFilterFunction function, a dependency to org.
+         springframework.cloud:spring-cloud-starter-loadbalancer has been added !-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
