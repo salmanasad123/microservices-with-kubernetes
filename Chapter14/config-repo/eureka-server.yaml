@@ -1,0 +1,62 @@
+server:
+    port: 8761
+
+# The application name property has been moved to the application.yml inside the
+# spring-cloud/eureka-server.yml
+# spring.application.name: eureka-server
+
+# Credentials for the user are set up in the configuration file, cipher means since the encryption is enabled on
+# cloud config server, it will store the password in encrypted format.
+app:
+    eureka-username: u
+    eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
+
+# Parameters for the Eureka server, prefixed with eureka.server.
+# Parameters for Eureka clients, prefixed with eureka.client. This is for clients who want to
+# communicate with a Eureka server.
+# Parameters for Eureka instances, prefixed with eureka.instance. This is for the microservice
+# instances that want to register themselves in the Eureka server.
+# The first part of the configuration, for a Eureka instance and client, is a standard configuration
+# for a standalone Eureka server.
+# The last two parameters used for the Eureka server, waitTimeInMsWhenSyncEmpty and
+# response-cache-update-interval-ms, are used to minimize the startup time.
+eureka:
+    instance:
+        hostname: localhost
+    client:
+        registerWithEureka: false
+        fetchRegistry: false
+        serviceUrl:
+            defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+    server:
+        waitTimeInMsWhenSyncEmpty: 0
+        response-cache-update-interval-ms: 5000
+
+management.endpoints.web.exposure.include: "*"
+
+# Configuration for using Micrometer Tracing and Zipkin is added to the configuration file, config-repo/*.yml.
+# In the default profile, it is specified that trace information will be sent to Zipkin using the following URL.
+management.zipkin.tracing.endpoint: http://zipkin-server:9411/api/v2/spans
+
+# By default, Micrometer Tracing only sends 10% of the traces to Zipkin. To ensure that all traces are
+# sent to Zipkin, the following property is added to the default profile
+management.tracing.sampling.probability: 1.0
+
+# We also want trace and span IDs to be written to logs; this will enable us to correlate log output from
+# cooperating microservices that, for example, fulfill a request sent to the external API.
+# We can include the trace and span IDs in the log output by specifying the following log format:
+# With the above log format, the log output will look like:
+# 2023-04-22T14:02:07.417Z  INFO [product-composite,01234,56789]
+# Where product-composite is the name of the microservice, 01234 is the trace ID, and 56789 is the span ID.
+logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+---
+
+spring.config.activate.on-profile: docker
+
+server.port: 8761
+
+
+
+
+
