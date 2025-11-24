@@ -78,6 +78,45 @@ spring.rabbitmq:
   username: guest
   password: guest
 
+# timeoutDuration: Specifies how long a TimeLimiter instance waits for a call to complete before it throws
+# a timeout exception. We will set it to 2s.
+
+resilience4j.timelimiter:
+  instances:
+    product:
+      timeoutDuration: 2s
+
+# maxAttempts: The number of attempts before giving up, including the first call. We will set this parameter to 3,
+# allowing a maximum of two retry attempts after an initial failed call.
+# • waitDuration: The wait time before the next retry attempt. We will set this value to 1000 ms, meaning that
+# we will wait 1 second between retries.
+# • retryExceptions: A list of exceptions that will trigger a retry. We will only trigger retries on
+#InternalServerError exceptions, that is, when HTTP requests respond with a 500 status code
+resilience4j.retry:
+  instances:
+    product:
+      maxAttempts: 3
+      waitDuration: 1000
+      retryExceptions:
+        - org.springframework.web.reactive.function.client.WebClientResponseException$InternalServerError
+
+management.health.circuitbreakers.enabled: true
+
+resilience4j.circuitbreaker:
+  instances:
+    product:
+      allowHealthIndicatorToFail: false
+      registerHealthIndicator: true
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 5
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      ignoreExceptions:
+        - com.example.api.api.exceptions.InvalidInputException
+        - com.example.api.api.exception.NotFoundException
+
 logging:
   level:
     root: INFO

@@ -72,6 +72,12 @@ import static org.springframework.http.HttpMethod.GET;
  * be returned. The 202 response differs from a normal 200 (OK) response – it indicates that the
  * request has been accepted, but not fully processed. Instead, the processing will be completed
  * asynchronously and independently of the 202 response
+ *
+ * Jis class ke methods par @CircuitBreaker (ya @Retry, @RateLimiter, etc.) laga hua ho, woh class Spring Bean hona zaroori hai.
+ *
+ * Agar class Spring Bean nahi hogi →
+ * Spring AOP proxy create nahi karega →
+ * Circuit Breaker kabhi trigger nahi hoga.
  */
 
 @Component
@@ -150,6 +156,11 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
      *
      * The fallbackMethod parameter in the circuit breaker annotation is used to specify what fallback method
      * to call (getProductFallbackValue, in this case) when the circuit breaker is open.
+     *
+     * Jis class ke methods par @CircuitBreaker (ya @Retry, @RateLimiter, etc.) laga hua ho, woh class Spring Bean hona zaroori hai.
+     * Agar class Spring Bean nahi hogi →
+     * Spring AOP proxy create nahi karega →
+     * Circuit Breaker kabhi trigger nahi hoga.
      */
     @Override
     @Retry(name = "product")
@@ -333,6 +344,25 @@ public class ProductCompositeIntegration implements ProductService, ReviewServic
         streamBridge.send(bindingName, message);
     }
 
+    /**
+     * To be able to apply fallback logic when the circuit breaker is open, that is, when a request fails fast,
+     * we can specify a fallback method on the CircuitBreaker annotation, as seen in the previous source
+     * code. The method must follow the signature of the method the circuit breaker is applied for and also
+     * have an extra last argument used for passing the exception that triggered the circuit breaker.
+     *
+     * The last parameter specifies that we want to be able to handle exceptions of type
+     * CallNotPermittedException. We are only interested in exceptions that are thrown when the circuit
+     * breaker is in its open state so that we can apply fail-fast logic. When the circuit breaker is open,
+     * it will not permit calls to the underlying method; instead, it will immediately throw a
+     * CallNotPermittedException exception. Therefore, we are only interested in catching CallNotPermittedException exceptions
+     * @param productId
+     * @param delay
+     * @param faultPercent
+     * @param ex
+     *
+     * We will return hardcoded values based on the productId, to simulate a hit in a cache.
+     * To simulate a miss in the cache, we will throw a not found exception in the case where the productId is 13
+     */
     private Mono<Product> getProductFallbackValue(int productId, int delay, int faultPercent, CallNotPermittedException ex) {
 
         LOG.warn("Creating a fail-fast fallback product for productId = {}, delay = {}, faultPercent = {} and exception = {} ",
