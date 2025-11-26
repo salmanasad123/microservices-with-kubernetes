@@ -1,5 +1,5 @@
 To build the FAT jars, use this command inside of each service folder.
-for example: Microservices-with-kubernetes\Chapter13\microservices\product-service
+for example: Microservices-with-kubernetes\Chapter14\microservices\product-service
 
 docker-compose build --no-cache --> for no cache build
 

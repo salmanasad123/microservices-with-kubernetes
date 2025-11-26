@@ -1,0 +1,44 @@
+To build the FAT jars, use this command inside of each service folder.
+for example: Microservices-with-kubernetes\Chapter15\microservices\product-service
+
+docker-compose build --no-cache --> for no cache build
+
+Command --> mvn clean package spring-boot:repackage
+
+For recommendation service:
+Do a clean first in the main parent pom
+then do
+mvn compile
+then inside the microservices/recommendation folder
+do this : mvn package spring-boot:repackage
+
+
+Review Service Pom:
+
+Agar ReviewMapperImpl generate nahi hui, to iska matlab MapStruct annotation processor run hi nahi hua jab aapne project build kiya.
+
+ye pom.xml kaafi clean hai, bas ek important cheez missing hai —
+MapStruct ka annotation processor Maven compiler plugin me explicitly declare nahi kiya gaya.
+
+Is wajah se compile time pe ReviewMapperImpl.java generate hi nahi hota. Annotation processor ki classes
+target/generated-sources/annotations mae hoti hain.
+
+<plugins>
+        <!-- ✅ Compiler plugin with MapStruct annotation processor -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>${java.version}</source>
+                <target>${java.version}</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>${mapstruct.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+

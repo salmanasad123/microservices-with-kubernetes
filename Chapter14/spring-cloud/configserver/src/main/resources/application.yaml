@@ -10,7 +10,7 @@ spring:
 
 # The most important configuration is to specify where to find the configuration repository, indicated using the
 # spring.cloud.config.server.native.searchLocations property.
-spring.cloud.config.server.native.search-locations: file:///C:/Users/Salman%20Asad/Documents/Microservices-with-kubernetes/Chapter13/config-repo
+spring.cloud.config.server.native.search-locations: file:///C:/Users/Salman%20Asad/Documents/Microservices-with-kubernetes/Chapter14/config-repo
 
 # WARNING: Exposing all management endpoints over http should only be used during development, must be locked down in production!
 management.endpoint.health.show-details: "ALWAYS"
