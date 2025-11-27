@@ -1,0 +1,34 @@
+# The kind and apiVersion attributes are used to specify that we are declaring a Deployment object.
+# The metadata section is used to describe the Deployment object. For example, we give it the name nginx-deploy.
+# Next comes a spec section that defines our desired state for the Deployment object.
+# replicas: 1 specifies we want to have one Pod up and running.
+# A selector section that specifies how the Deployment will find the Pods it manages. In this case,
+# the Deployment will look for Pods that have the app label set to nginx-app.
+# The template section is used to specify how Pods will be created. The metadata section specifies the
+# label, app: nginx-app, which is used to identify the Pods, thereby matching the selector.
+# The spec section specifies details for the creation of the single container in the Pod, that is, name, image,
+# and what ports it uses.
+
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-deploy
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
