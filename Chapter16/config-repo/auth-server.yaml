@@ -1,0 +1,47 @@
+# Authorization server will run on port 9999
+server.port: 9999
+server.forward-headers-strategy: framework
+
+#The application name property has been moved to the application.yml inside the
+# spring-cloud/authorizationserver.yml
+#spring.application.name: auth-server
+
+# public access for actuator endpoints
+management.endpoint.health.show-details: "ALWAYS"
+management.endpoints.web.exposure.include: "*"
+
+logging:
+  level:
+    root: INFO
+
+# Configuration for using Micrometer Tracing and Zipkin is added to the configuration file, config-repo/*.yml.
+# In the default profile, it is specified that trace information will be sent to Zipkin using the following URL.
+management.zipkin.tracing.endpoint: http://zipkin-server:9411/api/v2/spans
+
+# By default, Micrometer Tracing only sends 10% of the traces to Zipkin. To ensure that all traces are
+# sent to Zipkin, the following property is added to the default profile
+management.tracing.sampling.probability: 1.0
+
+# We also want trace and span IDs to be written to logs; this will enable us to correlate log output from
+# cooperating microservices that, for example, fulfill a request sent to the external API.
+# We can include the trace and span IDs in the log output by specifying the following log format:
+# With the above log format, the log output will look like:
+# 2023-04-22T14:02:07.417Z  INFO [product-composite,01234,56789]
+# Where product-composite is the name of the microservice, 01234 is the trace ID, and 56789 is the span ID.
+logging.pattern.level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+# Whenever a microservice instance needs to be stopped, for example, in a rolling upgrade scenario, there is a
+# risk that active requests are affected when the instance is stopped. To minimize this risk, Spring Boot has
+# added support for graceful shutdown. When applying graceful shutdown, a microservice stops accepting new requests
+# and waits for a configurable time for active requests to complete before it shuts down the application.
+# Requests that take a longer time to complete than the shutdown wait period will be aborted.
+# These requests will be seen as exceptional cases that a shutdown procedure can’t wait for before it stops
+# the application. Graceful shutdown has been enabled with a waiting period of 10 seconds for all microservices
+# by adding the following to the common file application.yml in the config-repo folder.
+server.shutdown: graceful
+spring.lifecycle.timeout-per-shutdown-phase: 10s
+
+# yaha per baki sari configuration default profile wali ajae gi except jo neechay define ho rhaa ha wo bas override
+# hoga
+---
+spring.config.activate.on-profile: docker
