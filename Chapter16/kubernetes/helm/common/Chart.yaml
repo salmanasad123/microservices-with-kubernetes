@@ -1,0 +1,17 @@
+# common/ — Shared base chart (foundation)
+# Is folder ke andar wo saari cheezein hoti hain jo har microservice ko chahiye, jaise:
+# common deployment template
+# common service template
+# ingress template
+# labels, annotations
+# common config, default resources
+# helper templates
+
+# Isme bataaya jata hai ki ye chart ek library chart hai.
+
+apiVersion: v2
+name: common
+type: library
+description: A Helm library chart with shared definitions
+version: 1.0.0
+appVersion: "1.0"

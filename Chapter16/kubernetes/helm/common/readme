@@ -1,0 +1,9 @@
+common/ — Shared base chart (foundation)
+Is folder ke andar wo saari cheezein hoti hain jo har microservice ko chahiye, jaise:
+
+common deployment template
+common service template
+ingress template
+labels, annotations
+common config, default resources
+helper templates
